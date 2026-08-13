@@ -9,6 +9,7 @@
     "seed": "node src/scripts/seed.js",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:geocode": "node --test src/tests/geocode.test.js",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "build": "echo 'No build step required for Node.js'"
