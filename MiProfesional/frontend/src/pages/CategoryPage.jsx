@@ -45,12 +45,19 @@ const CategoryPage = () => {
     </div>
   );
 
-  if (!category) return (
-    <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-      <h2 className="text-xl font-bold text-gray-900">Categoría no encontrada</h2>
-      <Link to="/" className="text-primary-600 mt-2 inline-block">Volver al inicio</Link>
-    </div>
-  );
+  if (!category) {
+    // Redirect commerce category to dedicated page
+    if (slug === 'comercio') {
+      window.location.href = '/comercios';
+      return null;
+    }
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-16 text-center">
+        <h2 className="text-xl font-bold text-gray-900">Categoría no encontrada</h2>
+        <Link to="/" className="text-primary-600 mt-2 inline-block">Volver al inicio</Link>
+      </div>
+    );
+  }
 
 
 

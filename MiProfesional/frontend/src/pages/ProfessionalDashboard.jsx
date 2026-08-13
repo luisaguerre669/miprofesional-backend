@@ -11,9 +11,12 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import DashboardStats from '../components/dashboard/StatsCards';
+import { usePromo } from '../hooks/usePromo';
+import { getCounterText } from '../utils/promoLabels';
 
 const ProfessionalDashboard = () => {
   const { user } = useAuth();
+  const promo = usePromo();
   const [bookings, setBookings] = useState([]);
   const [myProfile, setMyProfile] = useState(null);
   const [stats, setStats] = useState({
@@ -403,7 +406,7 @@ const ProfessionalDashboard = () => {
                               <Gift size={20} className="text-primary-600" />
                             </div>
                             <div>
-                              <h4 className="font-bold text-gray-900 text-sm">60 días gratis</h4>
+                              <h4 className="font-bold text-gray-900 text-sm">Periodo de prueba</h4>
                               <p className="text-xs text-gray-500">
                                 Disfrutá tu periodo gratuito sin cargo. Tu perfil esta visible para clientes.
                               </p>
@@ -417,6 +420,11 @@ const ProfessionalDashboard = () => {
                           <div className="h-full rounded-full bg-primary-500 transition-all"
                             style={{ width: `${Math.min(100, (subscription.daysRemaining / 30) * 100)}%` }} />
                         </div>
+                        {promo.active && (
+                          <p className={`text-[11px] font-semibold mt-2 ${promo.remaining <= 20 ? 'text-red-600 animate-pulse' : promo.remaining <= 100 ? 'text-amber-600' : 'text-gray-500'}`}>
+                            {getCounterText(promo.remaining)}
+                          </p>
+                        )}
                       </div>
                       <div className="p-4 bg-white rounded-xl border border-gray-200">
                         <div className="flex items-start gap-3">
@@ -492,7 +500,7 @@ const ProfessionalDashboard = () => {
 
                   <div className="p-5 bg-gray-50 rounded-xl border border-gray-200">
                     <h4 className="font-bold text-gray-900 text-sm mb-2">Que incluye tu suscripcion</h4>
-                    <p className="text-xs text-gray-500">60 días gratis para los primeros 700 suscriptores, luego $5.000/mes. Acceso completo a la plataforma: tu perfil aparece en los resultados de busqueda del marketplace y los clientes pueden contactarte directamente. Cancelas cuando quieras.</p>
+                    <p className="text-xs text-gray-500">{promo.active ? `60 días gratis para los primeros 700 suscriptores (${getCounterText(promo.remaining)}), luego $5.000/mes.` : 'Promoción de lanzamiento finalizada. $5.000/mes.'} Acceso completo a la plataforma: tu perfil aparece en los resultados de busqueda del marketplace y los clientes pueden contactarte directamente. Cancelas cuando quieras.</p>
                   </div>
 
                   {subscription.isVisible === false && (

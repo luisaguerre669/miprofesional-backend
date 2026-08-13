@@ -15,11 +15,12 @@ import {
   UserPlus, Plus, AlertTriangle, Building2,
   Briefcase, Crown, User, CheckCircle, Store
 } from 'lucide-react';
-import commerceCategories from '../data/commerceCategories';
 import AdBanner from '../components/ads/AdBanner';
 import NegociosDestacados from '../components/ads/NegociosDestacados';
 import MainBanner from '../components/MainBanner';
 import { resolveIcon, getInlineGradient } from '../utils/categoryIcons';
+import { usePromo } from '../hooks/usePromo';
+import { getCounterText } from '../utils/promoLabels';
 
 const customIcon = new L.DivIcon({
   className: 'custom-marker',
@@ -51,7 +52,7 @@ const promoSlides = [
     title: 'Comercios y negocios ',
     titleAccent: 'de tu barrio',
     desc: 'Pizzerias, farmacias, veterinarias, opticas, panaderias y mas locales comerciales cerca tuyo. Todo lo que necesitas a pasos de tu casa.',
-    link: '/categoria/comercio',
+    link: '/comercios',
     color: 'orange',
     subcategories: ['Pizzerias', 'Farmacias', 'Veterinarias', 'Panaderias', 'Opticas', 'Cafeterias', 'Kioscos', 'Rotiserias', 'Confiterias', 'Floреrias'],
   },
@@ -148,6 +149,7 @@ const PROVINCES = [
 ];
 
 const Home = () => {
+  const promo = usePromo();
   const [searchQuery, setSearchQuery] = useState('');
   const [featuredPros, setFeaturedPros] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -677,11 +679,10 @@ const Home = () => {
         </Link>
       </section>
 
-      {/* COMERCIO — SECCIÓN COMPLETA */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 md:mb-12">
-        {/* Hero banner */}
-        <Link to="/categoria/comercio"
-          className="block relative overflow-hidden rounded-2xl group shadow-xl hover:shadow-2xl transition-all duration-500 mb-6"
+      {/* COMERCIO BANNER */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+        <Link to="/comercios"
+          className="block relative overflow-hidden rounded-2xl group shadow-xl hover:shadow-2xl transition-all duration-500"
           style={{ minHeight: '220px' }}
         >
           <div className="absolute inset-0">
@@ -723,43 +724,13 @@ const Home = () => {
             </div>
           </div>
         </Link>
-
-        {/* Commerce subcategory photo grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-          {commerceCategories.map((cat) => (
-            <Link
-              key={cat.slug}
-              to={`/search?primaryCategory=comercio&q=${encodeURIComponent(cat.title)}`}
-              className="group relative overflow-hidden rounded-xl bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-            >
-              <div className="aspect-[4/3] overflow-hidden">
-                <img
-                  src={cat.image}
-                  alt={cat.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300" />
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4">
-                <h3 className="text-sm md:text-base font-bold text-white drop-shadow-lg leading-tight">{cat.title}</h3>
-                <p className="text-[11px] text-white/70 mt-0.5 drop-shadow">{cat.description}</p>
-              </div>
-              <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500 text-white text-[10px] font-bold rounded-full shadow-lg">
-                  Ver <ArrowRight size={10} />
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
       </section>
 
       {/* 4 ENTRY POINTS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 md:-mt-12 relative z-30 mb-6 md:mb-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Cliente */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 hover:shadow-md transition-all text-center">
+          <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-md p-5 md:p-6 hover:shadow-lg transition-all text-center">
             <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-3">
               <User size={24} className="text-blue-600" />
             </div>
@@ -779,10 +750,7 @@ const Home = () => {
           </div>
 
           {/* Profesional */}
-          <div className="bg-white rounded-2xl border-2 border-primary-200 shadow-md p-5 md:p-6 hover:shadow-lg transition-all text-center relative">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-primary-600 text-white text-[10px] font-bold rounded-full">
-              MÁS ELEGIDO
-            </div>
+          <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-md p-5 md:p-6 hover:shadow-lg transition-all text-center">
             <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center mx-auto mb-3">
               <Briefcase size={24} className="text-primary-600" />
             </div>
@@ -791,7 +759,16 @@ const Home = () => {
               <span className="text-2xl font-bold text-gray-900">$5.000</span>
               <span className="text-xs text-gray-400">/mes</span>
             </div>
-            <p className="text-xs text-emerald-600 font-medium mb-3">60 días gratis para los primeros 700 suscriptores.</p>
+            {promo.active ? (
+              <>
+                <p className="text-xs text-emerald-600 font-medium mb-1">60 días gratis para los primeros 700 suscriptores.</p>
+                <p className={`text-[11px] font-semibold mb-3 ${promo.remaining <= 20 ? 'text-red-600 animate-pulse' : promo.remaining <= 100 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                  {getCounterText(promo.remaining)}
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-gray-400 font-medium mb-3">Promoción finalizada</p>
+            )}
             <ul className="text-sm text-gray-600 space-y-2 mb-4 text-left">
               <li className="flex items-start gap-2"><CheckCircle size={14} className="text-emerald-500 shrink-0 mt-0.5" /> Perfil visible en el marketplace</li>
               <li className="flex items-start gap-2"><CheckCircle size={14} className="text-emerald-500 shrink-0 mt-0.5" /> Recibir solicitudes de clientes</li>
@@ -799,11 +776,11 @@ const Home = () => {
             </ul>
             <Link to="/register?role=professional"
               className="block w-full py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-all"
-            >Empezar 60 días gratis</Link>
+            >{promo.active ? 'Empezar 60 días gratis' : 'Suscribirse'}</Link>
           </div>
 
           {/* Comercio */}
-          <div className="bg-white rounded-2xl border-2 border-amber-200 shadow-md p-5 md:p-6 hover:shadow-lg transition-all text-center relative">
+          <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-md p-5 md:p-6 hover:shadow-lg transition-all text-center">
             <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center mx-auto mb-3">
               <Store size={24} className="text-amber-600" />
             </div>
@@ -812,7 +789,16 @@ const Home = () => {
               <span className="text-2xl font-bold text-gray-900">$10.000</span>
               <span className="text-xs text-gray-400">/mes</span>
             </div>
-            <p className="text-xs text-emerald-600 font-medium mb-3">60 días gratis para los primeros 700 suscriptores.</p>
+            {promo.active ? (
+              <>
+                <p className="text-xs text-emerald-600 font-medium mb-1">60 días gratis para los primeros 700 suscriptores.</p>
+                <p className={`text-[11px] font-semibold mb-3 ${promo.remaining <= 20 ? 'text-red-600 animate-pulse' : promo.remaining <= 100 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                  {getCounterText(promo.remaining)}
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-gray-400 font-medium mb-3">Promoción finalizada</p>
+            )}
             <ul className="text-sm text-gray-600 space-y-2 mb-4 text-left">
               <li className="flex items-start gap-2"><CheckCircle size={14} className="text-emerald-500 shrink-0 mt-0.5" /> Perfil en sección Comercios</li>
               <li className="flex items-start gap-2"><CheckCircle size={14} className="text-emerald-500 shrink-0 mt-0.5" /> Subcategoría específica</li>
@@ -820,11 +806,11 @@ const Home = () => {
             </ul>
             <Link to="/register?role=professional"
               className="block w-full py-2.5 bg-amber-600 text-white rounded-xl text-sm font-semibold hover:bg-amber-700 transition-all"
-            >Empezar 60 días gratis</Link>
+            >{promo.active ? 'Empezar 60 días gratis' : 'Suscribirse'}</Link>
           </div>
 
           {/* Empresa */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 md:p-6 hover:shadow-md transition-all text-center">
+          <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-md p-5 md:p-6 hover:shadow-lg transition-all text-center">
             <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mx-auto mb-3">
               <Building2 size={24} className="text-purple-600" />
             </div>
@@ -833,7 +819,16 @@ const Home = () => {
               <span className="text-2xl font-bold text-gray-900">$20.000</span>
               <span className="text-xs text-gray-400">/mes</span>
             </div>
-            <p className="text-xs text-emerald-600 font-medium mb-3">60 días gratis para los primeros 700 suscriptores.</p>
+            {promo.active ? (
+              <>
+                <p className="text-xs text-emerald-600 font-medium mb-1">60 días gratis para los primeros 700 suscriptores.</p>
+                <p className={`text-[11px] font-semibold mb-3 ${promo.remaining <= 20 ? 'text-red-600 animate-pulse' : promo.remaining <= 100 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                  {getCounterText(promo.remaining)}
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-gray-400 font-medium mb-3">Promoción finalizada</p>
+            )}
             <ul className="text-sm text-gray-600 space-y-2 mb-4 text-left">
               <li className="flex items-start gap-2"><CheckCircle size={14} className="text-emerald-500 shrink-0 mt-0.5" /> Búsqueda avanzada de CVs</li>
               <li className="flex items-start gap-2"><CheckCircle size={14} className="text-emerald-500 shrink-0 mt-0.5" /> Acceso a profesionales del marketplace</li>
@@ -841,7 +836,7 @@ const Home = () => {
             </ul>
             <Link to="/register?role=company"
               className="block w-full py-2.5 bg-purple-600 text-white rounded-xl text-sm font-semibold hover:bg-purple-700 transition-all"
-            >Crear cuenta empresa</Link>
+            >{promo.active ? 'Empezar 60 días gratis' : 'Suscribirse'}</Link>
           </div>
         </div>
       </section>
@@ -1091,37 +1086,59 @@ const Home = () => {
               <Link to="/register" className="block w-full py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-all">Crear cuenta</Link>
             </div>
             <div className="bg-white rounded-2xl border-2 border-primary-200 p-5 md:p-6 text-center relative">
-              <span className="inline-flex items-center gap-1 px-3 py-0.5 bg-primary-100 text-primary-700 text-[10px] font-bold rounded-full mb-2">60 días gratis para los primeros 700 suscriptores</span>
+              {promo.active && (
+                <span className="inline-flex items-center gap-1 px-3 py-0.5 bg-primary-100 text-primary-700 text-[10px] font-bold rounded-full mb-2">60 días gratis para los primeros 700 suscriptores</span>
+              )}
               <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <Briefcase size={20} className="text-primary-600" />
               </div>
               <h3 className="font-bold text-gray-900">Profesional</h3>
               <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">$5.000 por mes</p>
               <p className="text-3xl font-black text-gray-900 mb-1">$5.000</p>
-              <p className="text-[11px] text-gray-500 mb-4">60 días gratis para los primeros 700 suscriptores.</p>
+              {promo.active ? (
+                <>
+                  <p className="text-[11px] text-emerald-600 font-medium mb-1">60 días gratis para los primeros 700 suscriptores.</p>
+                  <p className={`text-[11px] font-semibold mb-4 ${promo.remaining <= 20 ? 'text-red-600 animate-pulse' : promo.remaining <= 100 ? 'text-amber-600' : 'text-gray-500'}`}>
+                    {getCounterText(promo.remaining)}
+                  </p>
+                </>
+              ) : (
+                <p className="text-[11px] text-gray-400 mb-4">Promoción finalizada</p>
+              )}
               <ul className="text-xs text-gray-600 space-y-2 mb-5 text-left">
                 <li className="flex items-start gap-2"><CheckCircle size={12} className="text-emerald-500 shrink-0 mt-0.5" /> Perfil en marketplace</li>
                 <li className="flex items-start gap-2"><CheckCircle size={12} className="text-emerald-500 shrink-0 mt-0.5" /> CV premium destacado</li>
                 <li className="flex items-start gap-2"><CheckCircle size={12} className="text-emerald-500 shrink-0 mt-0.5" /> Estadísticas de perfil</li>
               </ul>
-              <Link to="/register?role=professional" className="block w-full py-2 bg-primary-600 text-white text-xs font-bold rounded-xl hover:bg-primary-700 transition-all">Empezar 60 días gratis</Link>
+              <Link to="/register?role=professional" className="block w-full py-2 bg-primary-600 text-white text-xs font-bold rounded-xl hover:bg-primary-700 transition-all">{promo.active ? 'Empezar 60 días gratis' : 'Suscribirse'}</Link>
             </div>
             <div className="bg-white rounded-2xl border-2 border-amber-200 p-5 md:p-6 text-center relative">
-              <span className="inline-flex items-center gap-1 px-3 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full mb-2">60 días gratis para los primeros 700 suscriptores</span>
+              {promo.active && (
+                <span className="inline-flex items-center gap-1 px-3 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full mb-2">60 días gratis para los primeros 700 suscriptores</span>
+              )}
               <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <Store size={20} className="text-amber-600" />
               </div>
               <h3 className="font-bold text-gray-900">Comercio</h3>
               <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">$10.000 por mes</p>
               <p className="text-3xl font-black text-gray-900 mb-1">$10.000</p>
-              <p className="text-[11px] text-gray-500 mb-4">60 días gratis para los primeros 700 suscriptores.</p>
+              {promo.active ? (
+                <>
+                  <p className="text-[11px] text-emerald-600 font-medium mb-1">60 días gratis para los primeros 700 suscriptores.</p>
+                  <p className={`text-[11px] font-semibold mb-4 ${promo.remaining <= 20 ? 'text-red-600 animate-pulse' : promo.remaining <= 100 ? 'text-amber-600' : 'text-gray-500'}`}>
+                    {getCounterText(promo.remaining)}
+                  </p>
+                </>
+              ) : (
+                <p className="text-[11px] text-gray-400 mb-4">Promoción finalizada</p>
+              )}
               <ul className="text-xs text-gray-600 space-y-2 mb-5 text-left">
                 <li className="flex items-start gap-2"><CheckCircle size={12} className="text-emerald-500 shrink-0 mt-0.5" /> Perfil en sección Comercios</li>
                 <li className="flex items-start gap-2"><CheckCircle size={12} className="text-emerald-500 shrink-0 mt-0.5" /> Subcategoría específica</li>
                 <li className="flex items-start gap-2"><CheckCircle size={12} className="text-emerald-500 shrink-0 mt-0.5" /> Galería de productos</li>
                 <li className="flex items-start gap-2"><CheckCircle size={12} className="text-emerald-500 shrink-0 mt-0.5" /> Horarios personalizados</li>
               </ul>
-              <Link to="/register?role=professional" className="block w-full py-2 bg-amber-600 text-white text-xs font-bold rounded-xl hover:bg-amber-700 transition-all">Empezar 60 días gratis</Link>
+              <Link to="/register?role=professional" className="block w-full py-2 bg-amber-600 text-white text-xs font-bold rounded-xl hover:bg-amber-700 transition-all">{promo.active ? 'Empezar 60 días gratis' : 'Suscribirse'}</Link>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 p-5 md:p-6 text-center">
               <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -1130,13 +1147,22 @@ const Home = () => {
               <h3 className="font-bold text-gray-900">Empresa</h3>
               <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">$20.000 por mes</p>
               <p className="text-3xl font-black text-gray-900 mb-1">$20.000</p>
-              <p className="text-[11px] text-gray-500 mb-4">60 días gratis para los primeros 700 suscriptores.</p>
+              {promo.active ? (
+                <>
+                  <p className="text-[11px] text-emerald-600 font-medium mb-1">60 días gratis para los primeros 700 suscriptores.</p>
+                  <p className={`text-[11px] font-semibold mb-4 ${promo.remaining <= 20 ? 'text-red-600 animate-pulse' : promo.remaining <= 100 ? 'text-amber-600' : 'text-gray-500'}`}>
+                    {getCounterText(promo.remaining)}
+                  </p>
+                </>
+              ) : (
+                <p className="text-[11px] text-gray-400 mb-4">Promoción finalizada</p>
+              )}
               <ul className="text-xs text-gray-600 space-y-2 mb-5 text-left">
                 <li className="flex items-start gap-2"><CheckCircle size={12} className="text-emerald-500 shrink-0 mt-0.5" /> Búsqueda avanzada de CVs</li>
                 <li className="flex items-start gap-2"><CheckCircle size={12} className="text-emerald-500 shrink-0 mt-0.5" /> Contacto ilimitado</li>
                 <li className="flex items-start gap-2"><CheckCircle size={12} className="text-emerald-500 shrink-0 mt-0.5" /> Panel de administración</li>
               </ul>
-              <Link to="/register?role=company" className="block w-full py-2 bg-purple-600 text-white text-xs font-bold rounded-xl hover:bg-purple-700 transition-all">Crear cuenta empresa</Link>
+              <Link to="/register?role=company" className="block w-full py-2 bg-purple-600 text-white text-xs font-bold rounded-xl hover:bg-purple-700 transition-all">{promo.active ? 'Empezar 60 días gratis' : 'Suscribirse'}</Link>
             </div>
           </div>
         </div>

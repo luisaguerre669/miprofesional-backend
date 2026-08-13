@@ -1,14 +1,61 @@
 const categoriesData = [
   {
+    title: 'Salud',
+    slug: 'salud',
+    description: 'Médicos, psicólogos, kinesiólogos, enfermeros, dentistas y todos los profesionales de la salud para atención a domicilio o consulta.',
+    image: 'https://images.unsplash.com/photo-1579684453423-f84349ef60b0?w=800&q=80',
+    icon: 'Stethoscope',
+    metadata: { color: '#0f7a5a', featured: true, primaryCategory: 'professional' },
+    sortOrder: 1,
+    subcategories: [
+      { title: 'Médicos', slug: 'medicos', description: 'Médicos clínicos y especialistas a domicilio', image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=600&q=80', icon: 'Stethoscope' },
+      { title: 'Psicólogos', slug: 'psicologos', description: 'Atención psicológica presencial y online', image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80', icon: 'Heart' },
+      { title: 'Terapias', slug: 'terapias', description: 'Terapias ocupacionales y alternativas', image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80', icon: 'Heart' },
+      { title: 'Kinesiología', slug: 'kinesiologia', description: 'Rehabilitación y kinesiología a domicilio', image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80', icon: 'Heart' },
+      { title: 'Nutricionistas', slug: 'nutricionistas', description: 'Plan nutricional y acompañamiento alimenticio', image: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600&q=80', icon: 'Heart' },
+      { title: 'Enfermería', slug: 'enfermeria', description: 'Cuidados de enfermería a domicilio', image: 'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=600&q=80', icon: 'Heart' },
+      { title: 'Dentistas', slug: 'dentistas', description: 'Atención odontológica a domicilio', image: 'https://images.unsplash.com/photo-1606811971618-4486d14f3f99?w=600&q=80', icon: 'Stethoscope' },
+      { title: 'Fonoaudiología', slug: 'fonoaudiologia', description: 'Terapia del habla y lenguaje', image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80', icon: 'Heart' },
+      { title: 'Acompañantes terapéuticos', slug: 'acompanantes-terapeuticos', description: 'Acompañamiento terapéutico personalizado', image: 'https://images.unsplash.com/photo-1544027993-37dbfe43562a?w=600&q=80', icon: 'Users' },
+      { title: 'Masajistas terapéuticos', slug: 'masajistas-terapeuticos', description: 'Masajes terapéuticos y descontracturantes', image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=600&q=80', icon: 'Heart' },
+      { title: 'Veterinarios', slug: 'veterinarios', description: 'Atención veterinaria a domicilio', image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=600&q=80', icon: 'Stethoscope' },
+      { title: 'Farmacias', slug: 'farmacias', description: 'Farmacias de turno y servicios farmacéuticos', image: 'https://images.unsplash.com/photo-1585435557343-3b092031a831?w=600&q=80', icon: 'Heart' },
+      { title: 'Ópticas', slug: 'opticas', description: 'Ópticas y servicios de optometría', image: 'https://images.unsplash.com/photo-1577805947697-89e18249d767?w=600&q=80', icon: 'Stethoscope' },
+    ]
+  },
+  {
+    title: 'Servicios Generales',
+    slug: 'servicios-generales',
+    description: 'Limpieza, mudanzas, fletes, técnicos de electrodomésticos, costura, mantenimiento general, control de plagas y seguridad.',
+    image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80',
+    icon: 'Wrench',
+    metadata: { color: '#0f7a5a', featured: true, primaryCategory: 'professional' },
+    sortOrder: 2,
+    subcategories: [
+      { title: 'Limpieza profesional', slug: 'limpieza-profesional', description: 'Limpieza general de hogares y oficinas', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80', icon: 'SprayCan' },
+      { title: 'Mudanzas', slug: 'mudanzas', description: 'Traslados y mudanzas', image: 'https://images.unsplash.com/photo-1603796846097-bee99e4a601f?w=600&q=80', icon: 'Truck' },
+      { title: 'Fletes', slug: 'fletes', description: 'Fletes y transporte de carga', image: 'https://images.unsplash.com/photo-1603796846097-bee99e4a601f?w=600&q=80', icon: 'Truck' },
+      { title: 'Técnico de electrodomésticos', slug: 'tecnico-electrodomesticos', description: 'Reparación de lavarropas, heladeras, cocinas y más', image: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=600&q=80', icon: 'Wrench' },
+      { title: 'Costura y sastrería', slug: 'costura-sastreria', description: 'Arreglos de ropa, sastrería a medida', image: 'https://images.unsplash.com/photo-1559548331-f9cb9803144e?w=600&q=80', icon: 'Scissors' },
+      { title: 'Mantenimiento general', slug: 'mantenimiento-general', description: 'Reparaciones y mantenimiento integral', image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&q=80', icon: 'Wrench' },
+      { title: 'Control de plagas', slug: 'control-plagas', description: 'Fumigación y control de plagas', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80', icon: 'SprayCan' },
+      { title: 'Vigilancia privada', slug: 'vigilancia-privada', description: 'Servicio de vigilancia y seguridad física', image: 'https://images.unsplash.com/photo-1558002038-1055907df827?w=600&q=80', icon: 'Shield', metadata: { group: 'seguridad' } },
+      { title: 'Alarmas monitoreadas', slug: 'alarmas-monitoreadas', description: 'Instalación y monitoreo de alarmas 24/7', image: 'https://images.unsplash.com/photo-1558002038-1055907df827?w=600&q=80', icon: 'Shield', metadata: { group: 'seguridad' } },
+      { title: 'Seguridad electrónica', slug: 'seguridad-electronica', description: 'Sistemas electrónicos de seguridad y videovigilancia', image: 'https://images.unsplash.com/photo-1558002038-1055907df827?w=600&q=80', icon: 'Monitor', metadata: { group: 'seguridad' } },
+      { title: 'Protección contra incendios', slug: 'proteccion-incendios', description: 'Instalación y mantenimiento de sistemas contra incendios', image: 'https://images.unsplash.com/photo-1558002038-1055907df827?w=600&q=80', icon: 'Flame', metadata: { group: 'seguridad' } },
+      { title: 'Seguridad personal', slug: 'seguridad-personal', description: 'Protección personal y escolta privada', image: 'https://images.unsplash.com/photo-1558002038-1055907df827?w=600&q=80', icon: 'Shield', metadata: { group: 'seguridad' } },
+      { title: 'Custodia y monitoreo', slug: 'custodia-monitoreo', description: 'Custodia de bienes y monitoreo remoto', image: 'https://images.unsplash.com/photo-1558002038-1055907df827?w=600&q=80', icon: 'Shield', metadata: { group: 'seguridad' } },
+    ]
+  },
+  {
     title: 'Profesionales',
     slug: 'profesionales',
     description: 'Médicos, psicólogos, abogados, contadores, plomeros, electricistas, peluqueros y todos los profesionales de servicio.',
     image: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=800&q=80',
     icon: 'Briefcase',
     metadata: { color: '#0f7a5a', featured: true, primaryCategory: 'professional' },
-    sortOrder: 1,
+    sortOrder: 3,
     subcategories: [
-      { title: 'Salud', slug: 'prof-salud', description: 'Medicos, psicologos, kinesiologos, dentistas, enfermeros', image: 'https://images.unsplash.com/photo-1579684453423-f84349ef60b0?w=600&q=80', icon: 'Stethoscope' },
       { title: 'Construcción y Hogar', slug: 'prof-construccion', description: 'Albañiles, plomeros, electricistas, pintores, carpinteros', image: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=600&q=80', icon: 'Building2' },
       { title: 'Legales y Administración', slug: 'prof-legales', description: 'Abogados, contadores, escribanos, gestores', image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&q=80', icon: 'Scale' },
       { title: 'Belleza y Cuidado', slug: 'prof-belleza', description: 'Peluquería, manicuría, masajes, barbería, maquillaje', image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&q=80', icon: 'Sparkles' },
@@ -19,7 +66,6 @@ const categoriesData = [
       { title: 'Bienestar y Deportes', slug: 'prof-bienestar', description: 'Personal trainer, yoga, pilates, gimnasios', image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600&q=80', icon: 'Dumbbell' },
       { title: 'Mascotas (servicios)', slug: 'prof-mascotas', description: 'Peluquería canina, paseadores, guardería, adiestramiento', image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=600&q=80', icon: 'Dog' },
       { title: 'Transporte', slug: 'prof-transporte', description: 'Taxis, remises, transporte escolar, mensajería', image: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=600&q=80', icon: 'Car' },
-      { title: 'Servicios Generales', slug: 'prof-servicios', description: 'Limpieza, mudanzas, fletes, técnicos, mantenimiento', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80', icon: 'Wrench' },
     ]
   },
   {
@@ -29,7 +75,7 @@ const categoriesData = [
     image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80',
     icon: 'Building2',
     metadata: { color: '#1d4ed8', featured: true, primaryCategory: 'empresa' },
-    sortOrder: 2,
+    sortOrder: 4,
     subcategories: [
       { title: 'Consultoría empresarial', slug: 'emp-consultoria', description: 'Consultoría estratégica, financiera y de gestión', image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600&q=80', icon: 'Briefcase' },
       { title: 'Capacitación corporativa', slug: 'emp-capacitacion', description: 'Cursos, talleres y formación para empresas', image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=600&q=80', icon: 'GraduationCap' },
@@ -47,7 +93,7 @@ const categoriesData = [
     image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80',
     icon: 'Store',
     metadata: { color: '#059669', featured: true, primaryCategory: 'comercio' },
-    sortOrder: 3,
+    sortOrder: 5,
     commerceTypes: ['minorista', 'mayorista', 'mixto'],
     commerceSubcategories: {
       minorista: [

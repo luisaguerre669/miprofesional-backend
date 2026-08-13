@@ -6,9 +6,12 @@ import {
   ArrowRight, CheckCircle, Crown, Building2, ChevronRight,
   Star, MapPin, Briefcase, Award, TrendingUp, Zap
 } from 'lucide-react';
+import { usePromo } from '../hooks/usePromo';
+import { getCounterText } from '../utils/promoLabels';
 
 export default function EmpresasPage() {
   const { isAuthenticated } = useAuth();
+  const promo = usePromo();
 
   const steps = [
     { icon: Building2, title: '1. Creá tu cuenta empresa', desc: 'Registrate como empresa en segundos. Sin costo, sin compromiso.' },
@@ -94,7 +97,7 @@ export default function EmpresasPage() {
             </div>
             <div className="flex flex-wrap items-center gap-6 mt-10 text-sm text-gray-400">
               <span className="flex items-center gap-1.5"><CheckCircle size={14} className="text-emerald-400" /> Sin compromiso</span>
-              <span className="flex items-center gap-1.5"><CheckCircle size={14} className="text-emerald-400" /> 60 días gratis</span>
+              <span className="flex items-center gap-1.5"><CheckCircle size={14} className="text-emerald-400" /> {promo.active ? '60 días gratis' : 'Promo finalizada'}</span>
               <span className="flex items-center gap-1.5"><CheckCircle size={14} className="text-emerald-400" /> Cancelás cuando quieras</span>
             </div>
           </div>
@@ -109,7 +112,7 @@ export default function EmpresasPage() {
               { number: '2,500+', label: 'Profesionales registrados' },
               { number: '15+', label: 'Categorías disponibles' },
               { number: '98%', label: 'Tasa de respuesta' },
-              { number: '60 días', label: 'Prueba gratuita' },
+              { number: promo.active ? '60 días' : '—', label: 'Prueba gratuita' },
             ].map((s, i) => (
               <div key={i} className="text-center">
                 <p className="text-3xl font-bold text-gray-900">{s.number}</p>
@@ -167,7 +170,7 @@ export default function EmpresasPage() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-14">
             <h2 className="text-3xl font-bold text-gray-900 mb-3">Planes para empresas</h2>
-            <p className="text-gray-500 max-w-xl mx-auto">Elegí el plan que mejor se adapte a tu equipo. Ambos incluyen 60 días de prueba gratuita.</p>
+            <p className="text-gray-500 max-w-xl mx-auto">Elegí el plan que mejor se adapte a tu equipo. {promo.active ? 'Ambos incluyen 60 días de prueba gratuita.' : 'Promoción de lanzamiento finalizada.'} {promo.active && <span className="block text-xs mt-1">{getCounterText(promo.remaining)}</span>}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
             {plans.map((plan, i) => (
@@ -246,7 +249,7 @@ export default function EmpresasPage() {
       <section className="py-20 bg-gradient-to-br from-primary-600 to-primary-800">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Empezá a encontrar talento hoy</h2>
-          <p className="text-primary-100 text-lg mb-8 max-w-xl mx-auto">60 días gratis, sin compromiso. Creá tu cuenta empresa en menos de 2 minutos.</p>
+          <p className="text-primary-100 text-lg mb-8 max-w-xl mx-auto">{promo.active ? '60 días gratis, sin compromiso. Creá tu cuenta empresa en menos de 2 minutos.' : 'Creá tu cuenta empresa en menos de 2 minutos.'}</p>
           {isAuthenticated ? (
             <Link to="/cv-search"
               className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary-700 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all shadow-xl"

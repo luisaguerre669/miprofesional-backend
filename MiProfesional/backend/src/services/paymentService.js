@@ -30,8 +30,8 @@ function verifyWebhookSignature(headers, body) {
     const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
     
     if (!signature || !secret) {
-      logger.warn('Firma o secreto no configurado, omitiendo verificación');
-      return true; // En desarrollo, permitir sin firma
+      logger.error('Firma o secreto no configurado — webhook rechazado');
+      return false;
     }
     
     // Mercado Pago usa HMAC SHA256
@@ -287,13 +287,10 @@ async function handleWebhook(req, res) {
       id: body.data?.id
     });
     
-    // Verificar firma (opcional en sandbox)
-    if (process.env.NODE_ENV === 'production') {
-      const isValid = verifyWebhookSignature(headers, body);
-      if (!isValid) {
-        logger.error('Firma de webhook inválida');
-        return res.status(401).json({ error: 'Invalid signature' });
-      }
+    const isValid = verifyWebhookSignature(headers, body);
+    if (!isValid) {
+      logger.error('Firma de webhook inválida');
+      return res.status(401).json({ error: 'Invalid signature' });
     }
     
     // Solo procesar pagos

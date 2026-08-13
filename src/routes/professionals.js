@@ -382,13 +382,16 @@ router.get('/search', [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer')
 ], handleValidationErrors, async (req, res) => {
   try {
-    const { q: qQuery, search: searchQueryParam, categoryIds, primaryCategory, commerceType, modality, modalities, location, maxDistance = 50, minRating = 0, maxPrice, isVerified = false, limit = 20, page = 1 } = req.query;
+    const { q: qQuery, search: searchQueryParam, categoryIds, primaryCategory, commerceType, subCategory, subCategories, tags, modality, modalities, location, maxDistance = 50, minRating = 0, maxPrice, isVerified = false, limit = 20, page = 1 } = req.query;
     const query = qQuery || searchQueryParam;
 
     const options = {
       categoryIds: categoryIds ? (typeof categoryIds === 'string' ? JSON.parse(categoryIds) : categoryIds) : undefined,
       primaryCategory,
       commerceType,
+      subCategory,
+      subCategories,
+      tags,
       modality,
       modalities: modalities ? (typeof modalities === 'string' ? JSON.parse(modalities) : modalities) : undefined,
       location: location ? JSON.parse(location) : undefined,

@@ -241,7 +241,7 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
   body('available24h').optional().isBoolean().withMessage('available24h must be a boolean')
 ], handleValidationErrors, async (req, res) => {
   try {
-    const { name, email, password, phone, location, address, role = 'client', profession, categoryId, subcategoryId, available24h, acceptMarketing } = req.body;
+    const { name, email, password, phone, location, address, role = 'client', profession, categoryId, subcategoryId, available24h, acceptMarketing, primaryCategory, commerceType, subCategories, tags } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -285,7 +285,7 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
         const trialDays = await getTrialDays();
         const now = new Date();
         const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
-        const existingPro = await Professional.findOne({ userId: existingUser._id });
+          const existingPro = await Professional.findOne({ userId: existingUser._id });
         if (existingPro) {
           existingPro.isActive = true;
           existingPro.profileStatus = 'ACTIVE';
@@ -295,6 +295,10 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
             existingPro.categories = [{ categoryId, subcategoryId: subcategoryId || null }];
           }
           if (available24h !== undefined) existingPro.available24h = available24h;
+          if (primaryCategory) existingPro.primaryCategory = primaryCategory;
+          if (commerceType) existingPro.commerceType = commerceType;
+          if (subCategories) existingPro.subCategories = subCategories;
+          if (tags) existingPro.tags = tags;
           existingPro.subscription = {
             status: 'trial',
             trialStart: now,
@@ -324,6 +328,10 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
             subcategoryId: subcategoryId || undefined,
             categories: categoriesData,
             available24h: available24h === true,
+            primaryCategory: primaryCategory || undefined,
+            commerceType: commerceType || undefined,
+            subCategories: subCategories || undefined,
+            tags: tags || undefined,
             description: 'Completa tu perfil profesional',
             contact: { phone: phone || '+000000000000', email: existingUser.email },
             location: proLocation,
@@ -339,9 +347,13 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
         }
       }
 
-      if (role === 'professional') {
+      if (role === 'professional' || role === 'company') {
         const { incrementPromo } = require('../models/PromoCounter');
         await incrementPromo();
+        if (existingPro) {
+          existingPro.promoApplied = true;
+          await existingPro.save();
+        }
       }
 
       eventBus.emit('user:registered', { email: existingUser.email, name: existingUser.name, token: existingUser.verificationToken });
@@ -432,6 +444,10 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
           categoryId: categoryId || undefined,
           subcategoryId: subcategoryId || undefined,
           categories: categoriesData,
+          primaryCategory: primaryCategory || undefined,
+          commerceType: commerceType || undefined,
+          subCategories: subCategories || undefined,
+          tags: tags || undefined,
           description: 'Completa tu perfil profesional',
           contact: { phone: phone || '+000000000000', email: user.email },
           location: proLocation,
@@ -451,9 +467,13 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
       }
     }
 
-    if (role === 'professional') {
+    if (role === 'professional' || role === 'company') {
       const { incrementPromo } = require('../models/PromoCounter');
       await incrementPromo();
+      if (professional) {
+        professional.promoApplied = true;
+        await professional.save();
+      }
     }
 
     eventBus.emit('user:registered', { email: user.email, name: user.name, token: user.verificationToken });

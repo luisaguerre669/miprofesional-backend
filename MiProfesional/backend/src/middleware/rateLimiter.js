@@ -4,22 +4,27 @@ const env = require('../config/environment');
 const config = env.getEnvConfig();
 const multiplier = config.rateLimitMultiplier || 1;
 
+const skipOptions = (req) => req.method === 'OPTIONS';
+
 const searchRateLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: Math.floor(10 * multiplier),
   keyGenerator: (req) => req.userId || req.ip,
+  skip: skipOptions,
   message: { success: false, error: 'Demasiadas búsquedas. Intenta de nuevo en un minuto.' }
 });
 
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: Math.floor(10 * multiplier),
+  skip: skipOptions,
   message: { success: false, error: 'Demasiados intentos. Intenta de nuevo en 15 minutos.' }
 });
 
 const registerRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: Math.floor(5 * multiplier),
+  skip: skipOptions,
   message: { success: false, error: 'Demasiados registros desde esta IP. Intenta de nuevo en una hora.' }
 });
 

@@ -4,9 +4,26 @@ const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
 
-// Routes
 const authRoutes = require("./routes/auth");
 const bookingsRoutes = require("./routes/bookings");
+const professionalsRoutes = require("./routes/professionals");
+const categoriesRoutes = require("./routes/categories");
+const chatRoutes = require("./routes/chat");
+const usersRoutes = require("./routes/users");
+const uploadRoutes = require("./routes/upload");
+const adminRoutes = require("./routes/admin");
+const analyticsRoutes = require("./routes/analytics");
+const reviewsRoutes = require("./routes/reviews");
+const ratingsRoutes = require("./routes/ratings");
+const identityRoutes = require("./routes/identity");
+const subscriptionRoutes = require("./routes/subscription");
+const paymentsRoutes = require("./routes/payments");
+const mercadopagoRoutes = require("./routes/mercadopago.routes");
+const healthRoutes = require("./routes/health");
+const geocodeRoutes = require("./routes/geocode");
+const cvRoutes = require("./routes/cv");
+const auditRoutes = require("./routes/audit");
+const notificationsRoutes = require("./routes/notifications");
 
 class Server {
   constructor() {
@@ -22,12 +39,28 @@ class Server {
   }
 
   routes() {
-    if (authRoutes) {
-      this.app.use("/api/auth", authRoutes);
-    }
-    if (bookingsRoutes) {
-      this.app.use("/api/bookings", bookingsRoutes);
-    }
+    const mount = (path, router) => { if (router) this.app.use(path, router); };
+
+    mount("/api/auth", authRoutes);
+    mount("/api/bookings", bookingsRoutes);
+    mount("/api/professionals", professionalsRoutes);
+    mount("/api/categories", categoriesRoutes);
+    mount("/api/chat", chatRoutes);
+    mount("/api/users", usersRoutes);
+    mount("/api/upload", uploadRoutes);
+    mount("/api/admin", adminRoutes);
+    mount("/api/analytics", analyticsRoutes);
+    mount("/api/reviews", reviewsRoutes);
+    mount("/api/ratings", ratingsRoutes);
+    mount("/api/identity", identityRoutes);
+    mount("/api/subscription", subscriptionRoutes);
+    mount("/api/payments", paymentsRoutes);
+    mount("/api/mercadopago", mercadopagoRoutes);
+    mount("/api/health", healthRoutes);
+    mount("/api/geocode", geocodeRoutes);
+    mount("/api/cv", cvRoutes);
+    mount("/api/audit", auditRoutes);
+    mount("/api/notifications", notificationsRoutes);
 
     this.app.get("/health", (req, res) => {
       res.json({

@@ -21,12 +21,17 @@ const professionalSchema = new mongoose.Schema({
     enum: ['minorista', 'mayorista', 'mixto'],
     default: null
   },
-  // Commerce subcategory (e.g. Farmacia, Kiosco, Panadería)
+  // Commerce subcategory (legacy, single value)
   subCategory: {
     type: String,
     maxlength: 100,
     default: null
   },
+  // Commerce subcategories (multiple, e.g. ['pizzeria', 'cafeteria'])
+  subCategories: [{
+    type: String,
+    maxlength: 100
+  }],
   // Commerce tags (24hs, local fisico, atencion al publico, venta por volumen)
   tags: [{
     type: String,
@@ -376,7 +381,8 @@ const professionalSchema = new mongoose.Schema({
     mpInitPoint: { type: String, default: null },
     activatedAt: { type: Date, default: null },
     cancelledAt: { type: Date, default: null },
-  }
+  },
+  promoApplied: { type: Boolean, default: false },
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
@@ -449,6 +455,7 @@ professionalSchema.index({ primaryCategory: 1 });
 professionalSchema.index({ commerceType: 1 });
 professionalSchema.index({ subCategory: 1 });
 professionalSchema.index({ tags: 1 });
+professionalSchema.index({ promoApplied: 1 });
 professionalSchema.index({ isActive: 1, 'stats.rating': -1 });
 professionalSchema.index({ isActive: 1, 'stats.reviewCount': -1 });
 professionalSchema.index({ isActive: 1, 'pricing.hourlyRate': 1 });
@@ -637,6 +644,9 @@ professionalSchema.statics.search = function(query, options = {}) {
     categoryIds,
     primaryCategory,
     commerceType,
+    subCategory,
+    subCategories,
+    tags,
     modality,
     modalities,
     location,
@@ -686,6 +696,26 @@ professionalSchema.statics.search = function(query, options = {}) {
   // Commerce type filter (within comercio primaryCategory)
   if (commerceType) {
     searchQuery.commerceType = commerceType;
+  }
+
+  // Commerce subCategories filter
+  if (subCategories) {
+    const cats = typeof subCategories === 'string' ? subCategories.split(',') : (Array.isArray(subCategories) ? subCategories : [subCategories]);
+    searchQuery.subCategories = { $in: cats };
+  }
+
+  // Single commerce subCategory filter (matches both subCategories[] and legacy subCategory)
+  if (subCategory) {
+    searchQuery.$or = [
+      { subCategories: subCategory },
+      { subCategory: subCategory },
+    ];
+  }
+
+  // Tags filter
+  if (tags) {
+    const tagList = typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(Boolean) : (Array.isArray(tags) ? tags : [tags]);
+    searchQuery.tags = { $in: tagList };
   }
 
   // Modality filter

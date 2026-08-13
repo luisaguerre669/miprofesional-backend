@@ -206,6 +206,11 @@ const CATEGORY_TERM_MAP = {
   'belleza-y-cuidado': [
     'peluqueria', 'manicuria', 'masaje', 'depilacion', 'estetica', 'barbero', 'maquillaje',
   ],
+  'servicios-generales': [
+    'limpieza', 'mudanza', 'flete', 'fumigacion', 'plagas', 'cerrajero', 'piletero',
+    'vigilancia', 'alarma', 'seguridad', 'monitoreo', 'electrodomestico', 'reparacion',
+    'costura', 'sastreria', 'mantenimiento',
+  ],
 };
 
 // GET /api/v1/categories/suggest?q=pizza

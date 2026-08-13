@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import MapView from '../components/MapView';
 import { getAccurateLocation } from '../utils/geolocation';
+import commerceCategories from '../data/commerceCategories';
 
 // Términos de búsqueda que corresponden a la categoría COMERCIO
 const COMMERCE_TERMS = [
@@ -90,7 +91,9 @@ const Search = () => {
   const commerceDetectedRef = useRef(false);
   const [filters, setFilters] = useState({
     category: searchParams.get('category') || '',
-    subcategory: '',
+    subcategory: searchParams.get('subcategory') || '',
+    subCategory: searchParams.get('subCategory') || '',
+    subCategories: searchParams.get('subCategories') || '',
     minRating: 0,
     maxPrice: '',
     verified: false,
@@ -140,6 +143,8 @@ const Search = () => {
       if (disp247) params.disponibilidad = '24-7';
       if (filters.primaryCategory) params.primaryCategory = filters.primaryCategory;
       if (filters.commerceType) params.commerceType = filters.commerceType;
+      if (filters.subCategory) params.subCategory = filters.subCategory;
+      if (filters.subCategories) params.subCategories = filters.subCategories;
       api.get('/professionals/search', { params })
         .then(r => setProfessionals(r.data.data || []))
         .catch(e => console.error('Search error:', e))
@@ -181,6 +186,8 @@ const Search = () => {
       if (filterOpts.sortBy) params.sortBy = filterOpts.sortBy;
       if (filterOpts.primaryCategory) params.primaryCategory = filterOpts.primaryCategory;
       if (filterOpts.commerceType) params.commerceType = filterOpts.commerceType;
+      if (filterOpts.subCategory) params.subCategory = filterOpts.subCategory;
+      if (filterOpts.subCategories) params.subCategories = filterOpts.subCategories;
       if (disp247 || disponibilidad247) params.disponibilidad = '24-7';
       if (filterDisponible24hs) params.disponible24hs = true;
       if (filterAtencionInmediata) params.atencionInmediata = true;
@@ -218,6 +225,9 @@ const Search = () => {
     const p = {};
     if (query.trim()) p.q = query;
     if (disponibilidad247) p.disponibilidad = '24-7';
+    if (filters.subCategory) p.subCategory = filters.subCategory;
+    if (filters.subCategories) p.subCategories = filters.subCategories;
+    if (filters.primaryCategory) p.primaryCategory = filters.primaryCategory;
     setSearchParams(p);
     // Detectar términos comerciales en tiempo real
     if (isCommerceQuery(query) && !filters.category) {
@@ -225,19 +235,11 @@ const Search = () => {
     } else {
       setCommerceSuggestion(false);
     }
-    searchProfessionals(query, filters);
+    searchProfessionals(query, filters, disponibilidad247);
   };
 
   const applyCommerceCategory = () => {
-    if (commerceCategoryId) {
-      const newFilters = { ...filters, category: commerceCategoryId, subcategory: '' };
-      setFilters(newFilters);
-      setCommerceSuggestion(false);
-      searchProfessionals(query, newFilters, disponibilidad247);
-    } else {
-      // Si no hay ID de BD, redirigir a la página de categoría
-      window.location.href = '/categoria/comercio';
-    }
+    window.location.href = '/comercios';
   };
 
   const clear247 = () => {
@@ -245,6 +247,9 @@ const Search = () => {
     const p = {};
     if (query.trim()) p.q = query;
     if (filters.category) p.category = filters.category;
+    if (filters.subCategory) p.subCategory = filters.subCategory;
+    if (filters.subCategories) p.subCategories = filters.subCategories;
+    if (filters.primaryCategory) p.primaryCategory = filters.primaryCategory;
     setSearchParams(p);
     searchProfessionals(query, filters, false);
   };
@@ -348,7 +353,7 @@ const Search = () => {
           )}
         </form>
 
-        {(filters.category || filters.minRating > 0 || filters.maxPrice || filters.verified || filters.featured || filters.primaryCategory || filters.commerceType) && (
+        {(filters.category || filters.minRating > 0 || filters.maxPrice || filters.verified || filters.featured || filters.primaryCategory || filters.commerceType || filters.subCategory || filters.subCategories) && (
           <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
             {filters.category && (
               <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary-50 text-primary-700 rounded-lg text-sm">
@@ -359,7 +364,13 @@ const Search = () => {
             {filters.primaryCategory && (
               <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-sm">
                 {filters.primaryCategory === 'professional' ? 'Profesionales' : filters.primaryCategory === 'empresa' ? 'Empresas' : 'Comercios'}
-                <button onClick={() => { setFilters({...filters, primaryCategory: '', commerceType: ''}); applyFilters(); }}><X size={14} /></button>
+                <button onClick={() => { setFilters({...filters, primaryCategory: '', commerceType: '', subCategory: '', subCategories: ''}); applyFilters(); }}><X size={14} /></button>
+              </span>
+            )}
+            {filters.subCategory && (
+              <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-sm">
+                {commerceCategories.find(c => c.slug === filters.subCategory)?.title || filters.subCategory}
+                <button onClick={() => { setFilters({...filters, subCategory: ''}); applyFilters(); }}><X size={14} /></button>
               </span>
             )}
             {filters.commerceType && (
@@ -425,6 +436,18 @@ const Search = () => {
             </div>
 
             {filters.primaryCategory === 'comercio' && (
+              <>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Rubros</label>
+                <select value={filters.subCategories} onChange={e => setFilters({...filters, subCategories: e.target.value})}
+                  className="w-full p-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                >
+                  <option value="">Todos</option>
+                  {commerceCategories.map(cat => (
+                    <option key={cat.slug} value={cat.slug}>{cat.title}</option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tipo de Comercio</label>
                 <select value={filters.commerceType} onChange={e => setFilters({...filters, commerceType: e.target.value})}
@@ -436,6 +459,7 @@ const Search = () => {
                   <option value="mixto">Mixto</option>
                 </select>
               </div>
+              </>
             )}
 
             <div>
@@ -703,6 +727,18 @@ const Search = () => {
               </div>
             </Link>
           ))}
+        </div>
+      ) : filters.primaryCategory === 'comercio' ? (
+        <div className="text-center py-16 max-w-md mx-auto">
+          <Store size={56} className="mx-auto text-amber-300 mb-4" />
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Todavía no hay comercios publicados en este rubro</h3>
+          <p className="text-gray-500 text-sm mb-6">Registrá el primero y obtené mayor visibilidad.</p>
+          <Link
+            to="/register?role=professional"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition-all shadow-lg"
+          >
+            <Store size={18} /> Registrar mi comercio
+          </Link>
         </div>
       ) : (
         <div className="text-center py-20">

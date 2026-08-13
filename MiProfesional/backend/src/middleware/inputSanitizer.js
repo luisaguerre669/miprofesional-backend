@@ -1,6 +1,9 @@
+const MONGO_OP_KEYS = ['$where', '$regex', '$ne', '$gt', '$gte', '$lt', '$lte', '$in', '$nin', '$or', '$and', '$nor', '$not', '$exists', '$expr', '$jsonSchema', '$mod', '$elemMatch', '$geoIntersects', '$geoWithin', '$near', '$nearSphere', '$all', '$size', '$bitsAllClear', '$bitsAllSet', '$bitsAnyClear', '$bitsAnySet', '$comment', '$natural', '$currentDate', '$inc', '$min', '$max', '$mul', '$rename', '$setOnInsert', '$set', '$unset', '$addToSet', '$pop', '$pull', '$push', '$pullAll', '$each', '$position', '$slice', '$sort'];
+
 const sanitizeValue = (value) => {
   if (typeof value === 'string') {
-    return value.replace(/<[^>]*>/g, '').replace(/[\${}]/, '').trim();
+    let cleaned = value.replace(/<[^>]*>/g, '').replace(/[\${}]/, '').trim();
+    return cleaned;
   }
   if (Array.isArray(value)) {
     return value.map(sanitizeValue);
@@ -8,6 +11,7 @@ const sanitizeValue = (value) => {
   if (value && typeof value === 'object') {
     const sanitized = {};
     for (const k of Object.keys(value)) {
+      if (MONGO_OP_KEYS.includes(k)) continue;
       sanitized[k] = sanitizeValue(value[k]);
     }
     return sanitized;

@@ -9,6 +9,7 @@ import {
   Phone, Mail, Lock, User, Briefcase, Upload, Gift,
   FileText, Building2, Sparkles, Smartphone, Info, CreditCard, MapPin, AlertTriangle, Store, Tag
 } from 'lucide-react';
+import commerceCategories from '../data/commerceCategories';
 import LocationPicker from '../components/LocationPicker';
 
 const LICENSED_PROFESSIONS = [
@@ -49,6 +50,7 @@ const Register = () => {
     primaryCategory: '',
     commerceType: '',
     subCategory: '',
+    subCategories: [],
     tags: ''
   });
   const [error, setError] = useState('');
@@ -177,6 +179,7 @@ const Register = () => {
         servicioADomicilio: formData.servicioADomicilio,
         primaryCategory: findGroupForProfession(formData.profession) === 'Comercios' ? 'comercio' : 'professional',
         commerceType: formData.commerceType || undefined,
+        subCategories: formData.subCategories?.length ? formData.subCategories : undefined,
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
         address,
         termsAccepted: formData.acceptTerms
@@ -188,7 +191,7 @@ const Register = () => {
       console.log('[FLOW] Invocando AuthContext.register');
       const result = await register(
         sanitizedData.name, sanitizedData.email, sanitizedData.password, sanitizedData.role,
-        { phone: sanitizedData.phone, profession: sanitizedData.profession, categories: sanitizedData.categories, available24h: sanitizedData.available24h, disponible24hs: sanitizedData.disponible24hs, disponibleFinesDeSemana: sanitizedData.disponibleFinesDeSemana, disponibleFeriados: sanitizedData.disponibleFeriados, atencionInmediata: sanitizedData.atencionInmediata, servicioADomicilio: sanitizedData.servicioADomicilio, primaryCategory: sanitizedData.primaryCategory, commerceType: sanitizedData.commerceType, tags: sanitizedData.tags, address: sanitizedData.address, termsAccepted: sanitizedData.termsAccepted, traceId }
+        { phone: sanitizedData.phone, profession: sanitizedData.profession, categories: sanitizedData.categories, available24h: sanitizedData.available24h, disponible24hs: sanitizedData.disponible24hs, disponibleFinesDeSemana: sanitizedData.disponibleFinesDeSemana, disponibleFeriados: sanitizedData.disponibleFeriados, atencionInmediata: sanitizedData.atencionInmediata, servicioADomicilio: sanitizedData.servicioADomicilio, primaryCategory: sanitizedData.primaryCategory, commerceType: sanitizedData.commerceType, subCategories: sanitizedData.subCategories, tags: sanitizedData.tags, address: sanitizedData.address, termsAccepted: sanitizedData.termsAccepted, traceId }
       );
       console.log('[FLOW] Step 4 - register() finalizado');
       if (result.success) {
@@ -586,38 +589,56 @@ const Register = () => {
 
                 {/* Commerce-specific fields */}
                 {findGroupForProfession(formData.profession) === 'Comercios' && (
-                  <div className="space-y-3 p-4 bg-amber-50/50 border border-amber-200 rounded-xl">
+                  <div className="space-y-4 p-4 bg-amber-50/50 border border-amber-200 rounded-xl">
                     <div className="flex items-center gap-2 mb-1">
                       <Store size={16} className="text-amber-600" />
-                      <p className="text-sm font-semibold text-gray-900">Información del Comercio</p>
+                      <p className="text-sm font-semibold text-gray-900">Rubros de tu comercio</p>
                     </div>
-                    {/* Auto-detect commerceType from profession */}
-                    {(() => {
-                      const detectedType = formData.profession === 'comercio-minorista' ? 'minorista'
-                        : formData.profession === 'comercio-mayorista' ? 'mayorista'
-                        : formData.profession === 'comercio-mixto' ? 'mixto'
-                        : null;
-                      return detectedType ? (
-                        <input type="hidden" name="commerceType" value={detectedType} />
-                      ) : null;
-                    })()}
-                    {/* Manual commerceType for specific business types */}
-                    {!['comercio-minorista', 'comercio-mayorista', 'comercio-mixto'].includes(formData.profession) && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipo de Comercio</label>
-                        <div className="flex gap-2">
-                          {['minorista', 'mayorista', 'mixto'].map(type => (
-                            <button key={type} type="button" onClick={() => setFormData(prev => ({ ...prev, commerceType: type }))}
-                              className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-all ${
-                                formData.commerceType === type
-                                  ? 'border-amber-500 bg-amber-100 text-amber-800'
-                                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                              }`}
-                            >
-                              {type === 'minorista' ? 'Minorista' : type === 'mayorista' ? 'Mayorista' : 'Mixto'}
-                            </button>
-                          ))}
-                        </div>
+                    <p className="text-xs text-gray-500">Seleccioná uno o varios rubros. Tu comercio aparecerá en todas las categorías seleccionadas.</p>
+                    <div className="grid grid-cols-2 gap-1.5 max-h-60 overflow-y-auto pr-1">
+                      {commerceCategories.map(cat => {
+                        const selected = formData.subCategories?.includes(cat.slug);
+                        return (
+                          <button
+                            key={cat.slug}
+                            type="button"
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                subCategories: selected
+                                  ? (prev.subCategories || []).filter(s => s !== cat.slug)
+                                  : [...(prev.subCategories || []), cat.slug]
+                              }));
+                            }}
+                            className={`flex items-center gap-2 p-2 rounded-lg text-xs font-medium border transition-all text-left ${
+                              selected
+                                ? 'border-amber-500 bg-amber-100 text-amber-800'
+                                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                              selected ? 'bg-amber-500 border-amber-500 text-white' : 'border-gray-300'
+                            }`}>
+                              {selected && (
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                              )}
+                            </div>
+                            {cat.title}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {formData.subCategories?.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {formData.subCategories.map(slug => {
+                          const cat = commerceCategories.find(c => c.slug === slug);
+                          return cat ? (
+                            <span key={slug} className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-200/60 text-amber-800 text-[10px] font-medium rounded-full">
+                              {cat.title}
+                              <button type="button" onClick={() => setFormData(prev => ({ ...prev, subCategories: (prev.subCategories || []).filter(s => s !== slug) }))} className="hover:text-amber-600">&times;</button>
+                            </span>
+                          ) : null;
+                        })}
                       </div>
                     )}
                     <div>

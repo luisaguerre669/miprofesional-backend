@@ -9,7 +9,7 @@ import {
   Shield, Star, Mail, Phone, MapPin, Trash2, ExternalLink, Edit3,
   UserPlus, DollarSign, Calendar, Filter, ArrowUpRight, TrendingUp,
   Activity, Loader2, ChevronLeft, ChevronRight, MoreHorizontal, RefreshCw, Wifi, Database, Server, Terminal,
-  Building2, Crown, Zap, FileText, Eye, Store
+  Building2, Crown, Zap, FileText, Eye, Store, Gift, Percent
 } from 'lucide-react';
 
 const sidebar = [
@@ -85,6 +85,7 @@ const AdminPanel = () => {
   const [cvsSubcategoryFilter, setCvsSubcategoryFilter] = useState('');
   const [selectedCv, setSelectedCv] = useState(null);
   const [selectedCvFull, setSelectedCvFull] = useState(null);
+  const [promoStats, setPromoStats] = useState(null);
 
   useEffect(() => {
     fetchDashboard();
@@ -96,6 +97,7 @@ const AdminPanel = () => {
     fetchCompaniesStats();
     fetchCompanyPayments();
     fetchCVs();
+    fetchPromoStats();
   }, []);
 
   const fetchDashboard = async () => {
@@ -242,6 +244,23 @@ const AdminPanel = () => {
     } catch (e) { console.error(e); }
   };
 
+  const fetchPromoStats = async () => {
+    try {
+      const { data } = await api.get('/promo/stats');
+      const promo = await api.get('/promo/status');
+      setPromoStats({ ...data.data, status: promo.data.data });
+    } catch (e) { console.error(e); }
+  };
+
+  const resetPromo = async () => {
+    if (!window.confirm('¿Restablecer la promoción? Esto reiniciará el contador a 700 y limpiará promoApplied de todos los profesionales/comercios/empresas.')) return;
+    try {
+      await api.post('/promo/reset');
+      alert('Promoción restablecida exitosamente');
+      fetchPromoStats();
+    } catch (e) { alert('Error al restablecer la promoción'); }
+  };
+
   const handleCvSearch = (e) => {
     e.preventDefault();
     fetchCVs(1, cvsSearch, cvsProfessionFilter, cvsCompletenessFilter, cvsCategoryFilter, cvsStatusFilter, cvsSubcategoryFilter);
@@ -384,6 +403,52 @@ const AdminPanel = () => {
                   );
                 })}
               </div>
+
+              {/* Promo Card */}
+              {promoStats && (
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                        <Gift size={16} className="text-primary-600" /> Promoción 60 días gratis
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-0.5">Primeros 700 suscriptores reciben 60 días de prueba gratuita</p>
+                    </div>
+                    <button onClick={resetPromo}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-[10px] font-medium hover:bg-red-100 transition-all"
+                    ><RefreshCw size={12} /> Restablecer</button>
+                  </div>
+                  <div className="grid grid-cols-4 gap-4 mb-3">
+                    <div>
+                      <p className="text-[10px] text-gray-500 font-semibold uppercase">Total</p>
+                      <p className="text-xl font-black text-gray-900">{promoStats.status?.total || 700}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-500 font-semibold uppercase">Usados</p>
+                      <p className="text-xl font-black text-amber-600">{promoStats.status?.used || 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-500 font-semibold uppercase">Restantes</p>
+                      <p className={`text-xl font-black ${(promoStats.status?.remaining || 0) <= 20 ? 'text-red-600' : (promoStats.status?.remaining || 0) <= 100 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                        {promoStats.status?.remaining || 700}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-500 font-semibold uppercase">Consumido</p>
+                      <p className="text-xl font-black text-gray-900">
+                        {promoStats.status?.total > 0
+                          ? `${Math.round(((promoStats.status?.used || 0) / (promoStats.status?.total || 700)) * 100)}%`
+                          : '0%'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${Math.min(100, ((promoStats.status?.used || 0) / (promoStats.status?.total || 700)) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* CV Stats Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1260,7 +1325,9 @@ const AdminPanel = () => {
                                cv.primaryCategory === 'professional' ? 'Profesional' :
                                '—'}
                             </span>
-                            {cv.subCategory && <span className="ml-1 text-[10px] text-gray-400">· {cv.subCategory}</span>}
+                            {cv.subCategories?.length > 0
+                              ? <span className="ml-1 text-[10px] text-gray-400">· {cv.subCategories.join(', ')}</span>
+                              : cv.subCategory && <span className="ml-1 text-[10px] text-gray-400">· {cv.subCategory}</span>}
                           </td>
                           <td className="py-3 px-4 text-gray-500 text-xs">{cv.skillsCount}</td>
                           <td className="py-3 px-4">
@@ -1409,7 +1476,9 @@ const AdminPanel = () => {
                         {selectedCv.primaryCategory === 'comercio' ? 'Comercio' :
                          selectedCv.primaryCategory === 'empresa' ? 'Empresa' :
                          selectedCv.primaryCategory === 'professional' ? 'Profesional' : '—'}
-                        {selectedCv.subCategory ? <span className="text-gray-400 text-xs"> · {selectedCv.subCategory}</span> : ''}
+                        {selectedCv.subCategories?.length > 0
+                          ? <span className="text-gray-400 text-xs"> · {selectedCv.subCategories.join(', ')}</span>
+                          : selectedCv.subCategory ? <span className="text-gray-400 text-xs"> · {selectedCv.subCategory}</span> : ''}
                       </p>
                     </div>
                   </div>

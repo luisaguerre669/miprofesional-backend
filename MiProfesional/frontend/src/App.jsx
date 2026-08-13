@@ -23,6 +23,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import TermsPage from './pages/TermsPage';
 import EmpresasPage from './pages/EmpresasPage';
+import ComerciosPage from './pages/ComerciosPage';
 import CompanyDashboard from './pages/CompanyDashboard';
 
 // Protected pages
@@ -93,6 +94,7 @@ function AppRoutes() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/terms" element={<Layout><TermsPage /></Layout>} />
       <Route path="/empresas" element={<Layout><EmpresasPage /></Layout>} />
+      <Route path="/comercios" element={<Layout><ComerciosPage /></Layout>} />
 
       {/* Client Routes */}
       <Route
