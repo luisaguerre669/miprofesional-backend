@@ -32,6 +32,7 @@ const ratingsRoutes = require("./routes/ratings");
 const notificationsRoutes = require("./routes/notifications");
 const cvRoutes = require("./routes/cv");
 const geocodeRoutes = require("./routes/geocode");
+const promoRoutes = require("./routes/promo");
 
 // Models
 require("./models/Payment");
@@ -187,6 +188,7 @@ class Server {
   this.app.use("/api/notifications", notificationsRoutes);
     this.app.use("/api/cv", cvRoutes);
     this.app.use("/api/geocode", geocodeRoutes);
+    this.app.use("/api/promo", promoRoutes);
 
     // GET /api/home — dashboard aggregation for frontend
     this.app.get("/api/home", async (req, res) => {
