@@ -1,6 +1,52 @@
 const logger = require('./logger');
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
+const NOMINATIM_REVERSE_URL = 'https://nominatim.openstreetmap.org/reverse';
+
+const NOMINATIM_HEADERS = { 'User-Agent': 'MiProfesional/1.0 (miprofesional.online)' };
+const TIMEOUT_MS = 15000;
+const MAX_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 1000;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry(url, attempts = MAX_ATTEMPTS) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+      const res = await fetch(url, {
+        headers: NOMINATIM_HEADERS,
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+
+      if (!res.ok) {
+        lastError = new Error(`Nominatim returned HTTP ${res.status}`);
+        logger.warn(`Nominatim returned ${res.status} for: ${url}`);
+        if (res.status === 403 || res.status === 429 || res.status >= 500) {
+          await sleep(RETRY_DELAY_MS * attempt);
+          continue;
+        }
+        return null;
+      }
+      return res;
+    } catch (err) {
+      lastError = err;
+      if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+        logger.error(`Nominatim request timed out (attempt ${attempt}/${attempts})`);
+      } else {
+        logger.error(`Nominatim request failed (attempt ${attempt}/${attempts}):`, err.message);
+      }
+      if (attempt < attempts) await sleep(RETRY_DELAY_MS * attempt);
+    }
+  }
+  logger.error(`Nominatim request failed after ${attempts} attempts:`, lastError?.message);
+  return null;
+}
 
 function normalize(text) {
   if (!text) return '';
@@ -90,15 +136,8 @@ async function geocodeAddress({ address, city, state, country = 'Argentina' }) {
   logger.debug(`Geocode request URL: ${url}`);
 
   try {
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'MiProfesional/1.0 (miprofesional.online)' },
-      signal: AbortSignal.timeout(8000)
-    });
-
-    if (!res.ok) {
-      logger.warn(`Nominatim returned ${res.status} for query: ${query}`);
-      return null;
-    }
+    const res = await fetchWithRetry(url);
+    if (!res) return null;
 
     const data = await res.json();
     logger.debug(`Nominatim response count: ${data?.length || 0}`, {
@@ -133,13 +172,45 @@ async function geocodeAddress({ address, city, state, country = 'Argentina' }) {
       neighborhood: addr.neighbourhood || addr.suburb || ''
     };
   } catch (err) {
-    if (err.name === 'TimeoutError' || err.name === 'AbortError') {
-      logger.error('Geocode request timed out for:', query);
-    } else {
-      logger.error('Geocode request failed:', err.message);
-    }
+    logger.error('Geocode request failed:', err.message);
     return null;
   }
 }
 
-module.exports = { geocodeAddress };
+async function reverseGeocode({ latitude, longitude, zoom = 18 }) {
+  if (latitude === undefined || longitude === undefined || isNaN(Number(latitude)) || isNaN(Number(longitude))) {
+    logger.warn('Reverse geocode: invalid coordinates', { latitude, longitude });
+    return null;
+  }
+  const url = `${NOMINATIM_REVERSE_URL}?format=json&lat=${latitude}&lon=${longitude}&zoom=${zoom}&addressdetails=1&accept-language=es`;
+  logger.debug(`Reverse geocode URL: ${url}`);
+
+  try {
+    const res = await fetchWithRetry(url);
+    if (!res) return null;
+
+    const data = await res.json();
+    if (!data || data.error) {
+      logger.warn(`No reverse geocode result for ${latitude}, ${longitude}`, { error: data?.error });
+      return null;
+    }
+
+    const addr = data.address || {};
+    return {
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      displayName: data.display_name || '',
+      street: addr.road || '',
+      number: addr.house_number || '',
+      city: addr.city || addr.town || addr.village || addr.municipality || '',
+      state: addr.state || '',
+      country: addr.country || 'Argentina',
+      neighborhood: addr.neighbourhood || addr.suburb || ''
+    };
+  } catch (err) {
+    logger.error('Reverse geocode failed:', err.message);
+    return null;
+  }
+}
+
+module.exports = { geocodeAddress, reverseGeocode };
