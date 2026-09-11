@@ -17,7 +17,9 @@ const COMPANY_PRICE = 20000;
 router.get("/plans", async (req, res) => {
   const trialDays = await getTrialDays();
   const remaining = await getRemainingSpots();
-  const trialLabel = trialDays === 60 ? `${trialDays} días gratis — quedan ${remaining} cupos` : `${trialDays} días gratis`;
+  const trialLabel = trialDays > 0
+    ? trialDays === 60 ? `${trialDays} días gratis — quedan ${remaining} cupos` : `${trialDays} días gratis`
+    : 'Suscripcion mensual recurrente';
 
   res.json({
     success: true,

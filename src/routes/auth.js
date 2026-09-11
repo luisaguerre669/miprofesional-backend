@@ -284,7 +284,7 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
         const { getTrialDays, incrementPromo } = require('../models/PromoCounter');
         const trialDays = await getTrialDays();
         const now = new Date();
-        const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
+        const trialEnd = trialDays > 0 ? new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000) : null;
         const existingPro = await Professional.findOne({ userId: existingUser._id });
         if (existingPro) {
           existingPro.isActive = true;
@@ -295,11 +295,13 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
             existingPro.categories = [{ categoryId, subcategoryId: subcategoryId || null }];
           }
           if (available24h !== undefined) existingPro.available24h = available24h;
-          existingPro.subscription = {
-            status: 'trial',
-            trialStart: now,
-            trialEnd: trialEnd,
-          };
+          if (trialDays > 0) {
+            existingPro.subscription = {
+              status: 'trial',
+              trialStart: now,
+              trialEnd: trialEnd,
+            };
+          }
           await existingPro.save();
         } else {
           const proLocation = address?.street || address?.city ? {
@@ -330,18 +332,16 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
             pricing: { hourlyRate: 0, currency: 'ARS' },
             isActive: true,
             profileStatus: 'ACTIVE',
-            subscription: {
-              status: 'trial',
-              trialStart: now,
-              trialEnd: trialEnd,
-            },
+            ...(trialDays > 0 ? { subscription: { status: 'trial', trialStart: now, trialEnd } } : {}),
           }).save();
         }
       }
 
       if (role === 'professional') {
-        const { incrementPromo } = require('../models/PromoCounter');
-        await incrementPromo();
+        const { incrementPromo, isPromoEnabled } = require('../models/PromoCounter');
+        if (isPromoEnabled()) {
+          await incrementPromo();
+        }
       }
 
       eventBus.emit('user:registered', { email: existingUser.email, name: existingUser.name, token: existingUser.verificationToken });
@@ -410,7 +410,7 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
         const { getTrialDays, incrementPromo } = require('../models/PromoCounter');
         const trialDays = await getTrialDays();
         const now = new Date();
-        const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
+        const trialEnd = trialDays > 0 ? new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000) : null;
         const proLocation = address?.street || address?.city ? {
           address: `${address.street || ''} ${address.number || ''}`.trim(),
           city: address.city || 'pendiente',
@@ -439,11 +439,7 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
           isActive: true,
           profileStatus: 'ACTIVE',
           available24h: available24h === true,
-          subscription: {
-            status: 'trial',
-            trialStart: now,
-            trialEnd: trialEnd,
-          },
+          ...(trialDays > 0 ? { subscription: { status: 'trial', trialStart: now, trialEnd } } : {}),
         });
         await professional.save();
       } catch (proErr) {
@@ -452,8 +448,10 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
     }
 
     if (role === 'professional') {
-      const { incrementPromo } = require('../models/PromoCounter');
-      await incrementPromo();
+      const { incrementPromo, isPromoEnabled } = require('../models/PromoCounter');
+      if (isPromoEnabled()) {
+        await incrementPromo();
+      }
     }
 
     eventBus.emit('user:registered', { email: user.email, name: user.name, token: user.verificationToken });

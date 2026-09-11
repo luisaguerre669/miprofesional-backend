@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 
 const PROMO_MAX = 700;
 
+// La promocion de lanzamiento (60 dias gratis / primeros 700) queda DESACTIVADA
+// por defecto. Para reactivarla en el futuro, setear ENABLE_FIRST_700_PROMO=true.
+const isPromoEnabled = () => process.env.ENABLE_FIRST_700_PROMO === 'true';
+
 // In-memory cache
 let cache = { data: null, ts: 0 };
 const CACHE_TTL = 3000; // 3 seconds
@@ -22,6 +26,7 @@ async function getDoc() {
 }
 
 async function getRemainingSpots() {
+  if (!isPromoEnabled()) return 0;
   try {
     const doc = await getDoc();
     return Math.max(0, PROMO_MAX - doc.count);
@@ -31,6 +36,9 @@ async function getRemainingSpots() {
 }
 
 async function getPromoStatus() {
+  if (!isPromoEnabled()) {
+    return { total: PROMO_MAX, used: 0, remaining: 0, active: false };
+  }
   const now = Date.now();
   if (cache.data && now - cache.ts < CACHE_TTL) {
     return cache.data;
@@ -53,6 +61,7 @@ function invalidateCache() {
 }
 
 async function incrementPromo() {
+  if (!isPromoEnabled()) return;
   try {
     await PromoCounter.updateOne({ key: "first_700" }, { $inc: { count: 1 } }, { upsert: true });
     invalidateCache();
@@ -72,6 +81,7 @@ async function resetPromo() {
 }
 
 async function getTrialDays() {
+  if (!isPromoEnabled()) return 0;
   const remaining = await getRemainingSpots();
   return remaining > 0 ? 60 : 30;
 }
@@ -82,3 +92,4 @@ module.exports.getPromoStatus = getPromoStatus;
 module.exports.incrementPromo = incrementPromo;
 module.exports.resetPromo = resetPromo;
 module.exports.getTrialDays = getTrialDays;
+module.exports.isPromoEnabled = isPromoEnabled;
