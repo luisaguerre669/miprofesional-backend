@@ -1,7 +1,7 @@
 {
-  "name": "MiProfesional",
-  "short_name": "MiProfesional",
-  "description": "Marketplace de servicios profesionales en Argentina. Encuentra profesionales verificados cerca tuyo.",
+  "name": "MiProfesionalYa",
+  "short_name": "MiProfesionalYa",
+  "description": "MiProfesionalYa — Todo lo que necesitás, cerca tuyo. Conectamos personas con profesionales, comercios y empresas verificados en su zona.",
   "start_url": "/",
   "display": "standalone",
   "display_override": ["standalone", "browser"],

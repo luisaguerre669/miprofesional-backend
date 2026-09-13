@@ -96,9 +96,9 @@ const ServiceDetail = () => {
   return (
     <>
     <Helmet>
-      <title>{p.businessName || p.profession} — MiProfesional</title>
-      <meta name="description" content={p.description?.slice(0, 160) || `Perfil de ${p.businessName || p.profession} en MiProfesional. ${p.location?.city ? `Ubicado en ${p.location.city}.` : ''} ${p.stats?.rating ? `Valoración: ${p.stats.rating.toFixed(1)} estrellas.` : ''}`} />
-      <meta property="og:title" content={`${p.businessName || p.profession} — Profesional en MiProfesional`} />
+      <title>{p.businessName || p.profession} — MiProfesionalYa</title>
+      <meta name="description" content={p.description?.slice(0, 160) || `Perfil de ${p.businessName || p.profession} en MiProfesionalYa. ${p.location?.city ? `Ubicado en ${p.location.city}.` : ''} ${p.stats?.rating ? `Valoración: ${p.stats.rating.toFixed(1)} estrellas.` : ''}`} />
+      <meta property="og:title" content={`${p.businessName || p.profession} — Profesional en MiProfesionalYa`} />
       {p.avatar && <meta property="og:image" content={p.avatar} />}
       <meta name="robots" content="index, follow" />
       <link rel="canonical" href={`https://www.miprofesional.online/profesional/${p._id}`} />
@@ -330,6 +330,10 @@ const ServiceDetail = () => {
                   <span className="text-gray-400 text-sm">/hora</span>
                 </div>
                 {p.pricing?.currency && <p className="text-xs text-gray-400 mt-0.5">{p.pricing.currency}</p>}
+                <p className="text-[11px] text-gray-500 mt-2 leading-relaxed">
+                  El pago por el servicio contratado se acuerda directamente con el profesional.
+                  MiProfesionalYa no recibe ni procesa el pago correspondiente al trabajo contratado.
+                </p>
               </div>
             )}
 
@@ -492,6 +496,10 @@ const ServiceDetail = () => {
               >
                 Confirmar Reserva
               </button>
+              <p className="text-[11px] text-gray-500 text-center leading-relaxed">
+                La reserva confirma la fecha y hora del servicio. El pago se acuerda y abona directamente
+                con el profesional; MiProfesionalYa no participa del cobro del trabajo.
+              </p>
             </form>
           </div>
         </div>

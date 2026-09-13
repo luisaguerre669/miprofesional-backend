@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../lib/axios';
 import {
   Search, Users, FileText, Eye, MessageSquare,
-  Building2, CreditCard, ArrowRight, Crown, Clock,
+  Building2, CreditCard, ArrowRight, Crown,
   TrendingUp, Shield, AlertTriangle, CheckCircle, XCircle,
   BarChart3, ChevronRight, Calendar, Zap, Activity
 } from 'lucide-react';
@@ -22,7 +22,6 @@ export default function CompanyDashboard() {
   const subPlan = sub.plan || 'free';
   const isActive = subStatus === 'active';
   const isExpired = subStatus === 'suspended' || (sub.endDate && new Date(sub.endDate) < new Date());
-  const isTrial = subStatus === 'trial';
   const canSearch = isActive || user?.role === 'admin';
 
   const planLabel = subPlan === 'company' ? 'Plan Empresa' : subPlan === 'professional' ? 'Plan Profesional' : 'Plan gratuito';
@@ -80,11 +79,6 @@ export default function CompanyDashboard() {
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold">
                 <CheckCircle size={14} />
                 {planLabel} · Activo
-              </span>
-            ) : isTrial ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold">
-                <Clock size={14} />
-                Período de prueba
               </span>
             ) : (
               <Link to="/subscriptions"

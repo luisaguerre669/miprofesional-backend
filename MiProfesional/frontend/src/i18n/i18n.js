@@ -57,7 +57,6 @@ const es = {
       legalItem2: 'Acepto los Términos y Condiciones del servicio.',
       legalItem3: 'Acepto la Política de Privacidad y protección de datos.',
       legalItem4: 'Acepto que los datos sean verificados para garantizar la autenticidad.',
-      freeMonthBadge: '30 DÍAS GRATIS',
       subscriptionRequired: 'Se requiere suscripción activa para aparecer en resultados de búsqueda.',
       monthlyPlan: 'Plan Mensual - Profesional',
       monthlyPlanDesc: 'Accedé a todas las funciones',

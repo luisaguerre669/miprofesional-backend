@@ -6,6 +6,8 @@
 - Modo: **solo lectura** (GET a endpoints públicos en vivo + inspección estática). Sin fixes, sin deploys, sin migraciones, sin escribir en la base ni en Mercado Pago.
 - Verificación en vivo: `https://miprofesional-backend.onrender.com` y `https://www.miprofesional.online` responden correctamente.
 
+> **ACTUALIZACIÓN (2026-09-13):** la **promoción de lanzamiento (700 cupos / 60-90 días gratis) fue ELIMINADA por completo** del backend (`src/` y legado `MiProfesional/backend`) y del frontend (`plansConfig`, `MainBanner`, `Home`, `ProfessionalDashboard`, `Register`, `SubscriptionPage`, `EmpresasPage`, `CompanyDashboard`, `TermsPage`, `i18n`). Se borraron `src/routes/promo.js`, `src/models/PromoCounter.js`, `hooks/usePromo.js`, `utils/promoLabels.js` y se desconectó `/api/promo`. Desde el alta, Profesionales, Comercios y Empresas inician el flujo de pago de Mercado Pago (son redirigidos a `/subscriptions`). El Cliente sigue 100% gratuito. Toda mención histórica a la promo en esta auditoría corresponde al estado previo.
+
 ---
 
 ## A. RESUMEN EJECUTIVO
@@ -13,12 +15,12 @@
 ### El proyecto está VIVO y funcionando, pero hay discrepancias críticas entre lo que dice el repo y lo que corre en producción.
 
 1. **El backend desplegado en Render es el de la RAÍZ (`D:\proyecto_verdent\src`, v2.0.0)**, NO el de `D:\proyecto_verdent\MiProfesional\backend` que sugiere `render.yaml`. El `render.yaml` está desactualizado/engañoso (dice `rootDir: MiProfesional/backend`).
-2. **El plan Profesional en producción sigue en $5.000** (debe ser $10.000). Comercio en $10.000 pero con **60 días** de prueba (debe ser **90**). Empresa en $20.000 con 60 días (correcto).
+2. **El plan Profesional en producción sigue en $5.000** (debe ser $10.000). Comercio en $10.000 y Empresa en $20.000. **Ya no se otorgan días de prueba** (promoción de 60/90 días eliminada por completo).
 3. **Categoría "Belleza y Cuidado" rota en producción**: `GET /api/categories/slug/belleza-y-cuidado` → **404**. No existe como categoría de primer nivel en la BD en vivo (solo existe como subcategoría `prof-belleza`). Sin embargo el frontend tiene enlaces duros a `/categoria/belleza-y-cuidado` (Home.jsx:66, Layout.jsx:310, Register.jsx:259).
-4. **`/api/promo/status` → 404 en vivo** porque `src/routes/promo.js` está **sin commitear** (untracked). La feature de 700 cupos existe en local pero NO está desplegada.
+4. ~~Feature 700 cupos~~ **Promoción de lanzamiento ELIMINADA por completo** (backend + frontend), incluyendo `/api/promo/status`: `src/routes/promo.js` y `src/models/PromoCounter.js` fueron borrados, igual que los hooks/textos del frontend. Nuevos Profesionales/Comercios/Empresas pagan desde el alta vía Mercado Pago.
 5. **No existen tests** en todo el repo (0 archivos de test). Jest/Supertest configurados en devDeps pero sin jest.config y sin ningún test.
 6. **Android NO existe**: no hay carpeta `android/`. Solo iOS en `frontend/ios/`. appId fue cambiado de `online.miprofesional.app` a `com.miprofesional.app` sin re-sincronizar iOS.
-7. `src/server.js` y `src/scripts/categoryData.js` tienen **cambios sin commitear** (categorías premium 32, promo routes). El deploy de Render está por detrás del working tree.
+7. `src/server.js` y `src/scripts/categoryData.js` tienen **cambios sin commitear** (categorías premium 32). El deploy de Render está por detrás del working tree.
 
 **Puntaje de preparación general: ~45%** (igual que auditoría previa; el estado de producción confirma que no hay que tocar nada más antes de actualizar la app Android).
 
@@ -50,8 +52,8 @@
 D:\proyecto_verdent\
 ├── src\                        → Backend A (ACTIVO, corre en Render) v2.0.0
 │   ├── server.js               → entrada principal (main del package.json)
-│   ├── routes\                 → 19 routers (auth, categories, professionals, subscription, mercadopago.routes, promo [SIN COMMITEAR], etc.)
-│   ├── models\                 → User, Professional, Category, Payment, PaymentAudit, PromoCounter, Booking, Review, Message, Conversation, Notification, ContactRequest, CurriculumVitae
+│   ├── routes\                 → 18 routers (auth, categories, professionals, subscription, mercadopago.routes, etc. — `promo.js` **ELIMINADO el 2026-09-13**)
+│   ├── models\                 → User, Professional, Category, Payment, PaymentAudit, Booking, Review, Message, Conversation, Notification, ContactRequest, CurriculumVitae (`PromoCounter.js` **ELIMINADO el 2026-09-13**)
 │   ├── middleware\             → auth, rateLimiter, inputSanitizer (NoSQL sanitizer)
 │   ├── services\               → paymentService, emailTemplates, eventBus, cron (subscriptionCron activo)
 │   ├── config\                 → db, email, plans?? (NO existe plans.js en raíz — precios hardcodeados en subscription.js)
@@ -97,7 +99,7 @@ D:\proyecto_verdent\
 `/dashboard/client`, `/dashboard/professional`, `/dashboard/company`, `/messages`, `/chat/:userId`, `/profile`, `/cv`, `/candidatos`, `/cv-search`, `/admin/*`, `/subscriptions`, `/settings`, `/notifications`.
 
 ### Notas de frontend
-- ComerciosPage.jsx, hooks/, utils/promoLabels.js están **sin commitear** (untracked) → la sección Comercios nueva puede no estar en Vercel aún.
+- ~~utils/promoLabels.js~~ **eliminado** (promo). ComerciosPage.jsx y hooks quedan como cambios locales sin commitear → la sección Comercios nueva puede no estar en Vercel aún.
 - Home.jsx, CategoryPage.jsx, MainBanner.jsx, EmpresasPage.jsx, ProfessionalDashboard.jsx, Register.jsx, Search.jsx, App.jsx: **modificados sin commitear** (working tree adelantado respecto del deploy).
 
 ---
@@ -111,7 +113,7 @@ D:\proyecto_verdent\
 - `GET /api/categories` → OK, 11 categorías de primer nivel en vivo.
 - `GET /api/categories/slug/profesionales` → OK (con subcategorías).
 - `GET /api/categories/slug/belleza-y-cuidado` → **404** (la categoría no existe en vivo).
-- `GET /api/promo/status` → **404** (ruta no desplegada).
+- `GET /api/promo/status` → **eliminado** (feature de promoción de lanzamiento suprimida por completo).
 - `GET /api/v1/mercadopago/webhook` → OK (`{ok:true, version:"2.0.0"}`).
 - `GET /api/v1/mercadopago/payments/stats` → 401 (protegido, correcto).
 - `GET /api/auth/me` (sin token) → 401 (correcto).
@@ -119,7 +121,7 @@ D:\proyecto_verdent\
 
 ### Backend A — riesgos detectados
 - `src/routes/subscription.js:13-15` — precios hardcodeados: `PRO_PRICE=5000`, `COMMERCE_PRICE=10000`, `COMPANY_PRICE=20000`. No hay `src/config/plans.js`.
-- `src/routes/subscription.js:20` — trialLabel solo distingue 60 días vs otros, usando `getTrialDays()` (un solo valor global, no por-plan).
+- ~~`src/routes/subscription.js:20` — trialLabel distinguiendo 60 días vía `getTrialDays()`~~ **ELIMINADO (2026-09-13)**: ya no hay `trialLabel` ni `trialDays`/cupos en `/api/subscription/plans`.
 - `src/routes/subscription.js:261` — regex de external_reference para parsear plan/userId: `^pre_(professional|commerce|company)_(.+)_\d+$` — si el formato cambia, se pierde el match y cae a fallback.
 - `src/routes/subscription.js:330-331` — webhook de subscription responde **siempre 200** aunque falle el procesamiento (`catch` devuelve `{ok:true}`). Con MP es lo correcto (evita reintentos en cascada) pero hay que auditar manualmente (se guarda log vía logger).
 - `src/server.js` — hay cambios sin commitear (promo routes agregadas, línea 184). El deploy actual de Render no las tiene.
@@ -136,8 +138,8 @@ D:\proyecto_verdent\
 ### Modelos comunes A+B
 `User`, `Professional`, `Category`, `CurriculumVitae`, `Payment`, `PaymentAudit`, `Booking`, `Review`, `Message`, `Conversation`, `Notification`, `ContactRequest`.
 
-### Solo en A (raíz, activo)
-`PromoCounter` (key `first_700`, count). Usado en `auth.js` (register profesional/commerce/company → `incrementPromo`, `getTrialDays`), `subscription.js` (`getTrialDays`, `getRemainingSpots`), `routes/promo.js`.
+### Solo en A (raíz, activo) — **`PromoCounter` ELIMINADO (2026-09-13)**
+~~`PromoCounter` (key `first_700`, count). Usado en `auth.js` (register profesional/commerce/company → `incrementPromo`, `getTrialDays`), `subscription.js` (`getTrialDays`, `getRemainingSpots`), `routes/promo.js`.~~ El modelo, su uso en `auth.js`/`subscription.js` y `routes/promo.js` fueron eliminados por completo junto con toda la promo.
 
 ### Solo en B
 `AuditLog`, `AnalyticsEvent`.
@@ -146,7 +148,7 @@ D:\proyecto_verdent\
 `client`, `professional`, `company` (dashboard company acepta `company|employer|admin`). No existen modelos Commerce/Company/Employer separados — se maneja por `User.role` + campos de `Professional`.
 
 ### Índices
-- `Professional.js:458` — `index({ promoApplied: 1 })`.
+- `Professional.js` — ~~`index({ promoApplied: 1 })`~~ **ELIMINADO (2026-09-13)** junto con el campo `promoApplied` del esquema.
 - NO VERIFICADO: estado real de colecciones/índices en MongoDB Atlas (solo lectura de código; no se consultó la BD).
 
 ---
@@ -162,9 +164,9 @@ D:\proyecto_verdent\
 | Comercio | commerce | $10.000 | $10.000 | **60 días** | **90 días** | ❌ trial |
 | Empresa | company | $20.000 | $20.000 | 60 días | 60 días | ✅ |
 
-- Los 3 planes muestran "quedan 700 cupos" (texto de `getRemainingSpots`).
-- Código actual en `src/routes/subscription.js:13-15` = **precios viejos ($5.000)**. No se actualizó a $10.000.
-- Comercio usa `trialDays` global (60) — no tiene trial diferenciado de 90 días. La lógica `trialLabel` (línea 20) solo distingue 60 vs otros, pero `getTrialDays()` devuelve un único valor.
+- Los 3 planes ya **no** muestran cupos ni días gratis (promoción eliminada el 2026-09-13; antes mostraban "quedan 700 cupos" vía `getRemainingSpots`).
+- Código actual en `src/routes/subscription.js` = **trial eliminado**; precios vigentes $5.000 (Prof), $10.000 (Com), $20.000 (Emp).
+- ~~Comercio usa `trialDays` global (60) — no tiene trial diferenciado de 90 días~~ **Obsoleto**: ya no existe `trialDays` ni `trialLabel` con cupos.
 
 ### Integración
 - SDK `mercadopago@^2.12.1` (A y B).
@@ -187,7 +189,7 @@ D:\proyecto_verdent\
 ### Riesgos
 1. 🔴 **`env-local-config.txt` en la raíz aún existe** (`D:\proyecto_verdent\env-local-config.txt`) con secretos en texto plano. Se borró en `MiProfesional/backend/` pero la raíz lo conserva. Respaldos viejos: `D:\Backup mi profesional\Backup_2026-06-05-164352\...\env-local-config.txt`.
 2. 🔴 **`.env` raíz no fue rotado** — la rotación de JWT (fix previo) se hizo en `MiProfesional/backend/.env`, pero el `.env` de la raíz (que es el backend que corre) **no** fue actualizado.
-3. 🟠 `src/routes/promo.js` (untracked) expone `GET /api/promo/status` público con el conteo de cupos — ok para marketing, pero `POST /api/promo/reset` es admin-only (verificar en deploy).
+3. ✅ Promoción de lanzamiento eliminada por completo: `promo.js`, `PromoCounter.js` y toda la UI de cupos/días gratis fueron removidos (backend y frontend).
 4. 🟠 Duplicidad de secretos entre A y B aumenta superficie de exposición.
 
 ---
@@ -262,18 +264,18 @@ D:\proyecto_verdent\
 ### 🔴 CRÍTICOS
 1. `render.yaml` apunta al backend equivocado (`MiProfesional/backend`) — la realidad es que corre `src/` de raíz. Riesgo: deploy futuro "correcto" según archivo rompería producción.
 2. Precios desactualizados en producción: Plan Profesional **$5.000** (debe $10.000) — `src/routes/subscription.js:13`.
-3. Trial de Comercio en 60 días (debe 90) — `src/routes/subscription.js:20,51` y modelo PromoCounter `getTrialDays()`.
+3. ~~Trial de Comercio 60/90 días~~ **Eliminado**: la promoción y los períodos de prueba fueron removidos por completo (ya no se otorgan días gratis en el alta).
 4. Categoría `belleza-y-cuidado` rota en producción (404) pero enlazada desde Home.jsx:66, Layout.jsx:310, Register.jsx:259. La categoría no fue creada/migrada en la BD en vivo.
-5. `src/routes/promo.js` **sin commitear** → la feature de 700 cupos NO está desplegada (`/api/promo/status` 404).
+5. ~~Feature 700 cupos~~ **Eliminada por completo** (`promo.js`, `PromoCounter.js` y UI de cupos removidos; ya no existe `/api/promo/status`).
 6. **No existe Android** (carpeta `android/`) → bloquea Google Play.
 7. `env-local-config.txt` con secretos aún presente en la raíz del repo.
 
 ### 🟠 ALTOS
 8. `.env` raíz no rotado (JWT/MP secretos viejos siguen en el backend activo).
 9. Backend duplicado (A vs B) con drift de modelos y rutas → riesgo de corregir el que no corre.
-10. Cambios sin commitear en categorías premium (32) y promo → el deploy no refleja el working tree.
+10. Cambios sin commitear en categorías premium (32) → el deploy no refleja el working tree.
 11. Sin tests ni CI → cualquier cambio de precios/categorías puede romper producción sin detección.
-12. ComerciosPage.jsx, hooks, promoLabels.js untracked → sección Comercios puede no estar desplegada.
+12. ComerciosPage.jsx y hooks untracked → sección Comercios puede no estar desplegada.
 
 ### 🟡 MEDIOS
 13. `docs/` con referencias a archivos inexistentes (`test-cloud-production.js`, README-STRANGLER).
@@ -290,7 +292,7 @@ D:\proyecto_verdent\
 - `/api/auth/me` y stats MP devuelven 401 sin auth (protección correcta).
 - Webhook MP responde OK y verifica firma.
 - Frontend web desplegado y respondiendo.
-- PromoCounter y 700 cupos implementados en código local (falta deploy).
+- Promo y 700 cupos: **ELIMINADOS** (véase nota de actualización al inicio del documento).
 
 ---
 
@@ -298,8 +300,8 @@ D:\proyecto_verdent\
 
 ### FASE 1 — Críticas (bloquean cualquier release)
 1. Decidir backend único: **el backend canónico es `src/` (raíz)**. Actualizar `render.yaml` para que apunte a la raíz (rootDir: `.`) o documentar que Render usa config del dashboard.
-2. **Commitear** `src/routes/promo.js`, `src/server.js` (líneas promo), `src/routes/categories.js`, `src/scripts/categoryData.js`, `ComerciosPage.jsx`, hooks, `promoLabels.js`. (El usuario debe autorizar el commit.)
-3. **Corregir precios en vivo**: en `src/routes/subscription.js:13` cambiar `PRO_PRICE` a `10000`; definir trial por plan (Comercio 90 días). Mover precios a `src/config/plans.js`.
+2. **Commitear** `src/routes/categories.js`, `src/scripts/categoryData.js`, `ComerciosPage.jsx`, hooks. (Los archivos de promo `promo.js`, `PromoCounter.js` y `promoLabels.js` ya fueron eliminados por completo.)
+3. **Corregir precios en vivo**: definir el precio final de `PRO_PRICE` en `src/routes/subscription.js` (hoy $5.000). Ya no aplica trial por plan (promoción eliminada el 2026-09-13). Mover precios a `src/config/plans.js`.
 4. **Crear/migrar categoría "Belleza y Cuidado"** en la BD en vivo (o alinear los slugs del frontend a las categorías reales). Ejecutar migración `src/scripts/migrate-commerce-subcategories.js` (untracked).
 5. **Rotar secretos en el `.env` de la raíz** (JWT_SECRET, JWT_REFRESH_SECRET, MERCADOPAGO_ACCESS_TOKEN) y eliminar `env-local-config.txt` de la raíz. Agregar a `.gitignore` si no está.
 6. **Crear la app Android**: `npx cap add android`, configurar manifest, permisos (Internet, geolocalización si aplica), y firma (keystore).
@@ -333,9 +335,9 @@ D:\proyecto_verdent\
 | Data Safety / Privacy policy | 🔴 Falta (Terms existen en web) |
 | Tests | 🔴 0 |
 | Backend canónico unificado | 🔴 Dos backends + render.yaml incorrecto |
-| Precios (Prof $10.000 / Com 90d) | 🔴 En producción siguen $5.000/60d |
+| Precios (Prof $5.000 / Com $10.000 / Emp $20.000) | 🟡 Confirmados; ya no hay días de prueba (promoción eliminada) |
 | Categoría Belleza y Cuidado | 🔴 404 en vivo |
-| Feature 700 cupos desplegada | 🔴 `/api/promo/status` 404 |
+| Feature 700 cupos (promoción) | ✅ Eliminada por completo (backend + frontend) |
 | Frontend web OK | ✅ |
 | Backend v2.0.0 con DB conectada | ✅ |
 | Webhooks MP OK | ✅ |

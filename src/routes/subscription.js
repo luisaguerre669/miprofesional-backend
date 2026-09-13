@@ -9,15 +9,12 @@ const { MercadoPagoConfig, PreApproval } = require("mercadopago");
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://www.miprofesional.online";
 const router = express.Router();
-const { getTrialDays, getRemainingSpots } = require("../models/PromoCounter");
 const PRO_PRICE = 5000;
 const COMMERCE_PRICE = 10000;
 const COMPANY_PRICE = 20000;
 
 router.get("/plans", async (req, res) => {
-  const trialDays = await getTrialDays();
-  const remaining = await getRemainingSpots();
-  const trialLabel = trialDays === 60 ? `${trialDays} días gratis — quedan ${remaining} cupos` : `${trialDays} días gratis`;
+  const trialLabel = 'Suscripcion mensual recurrente';
 
   res.json({
     success: true,
@@ -30,7 +27,6 @@ router.get("/plans", async (req, res) => {
         cta: "Activar suscripcion",
         duration: "1 mes",
         recurring: true,
-        trialDays,
         forRole: "professional",
         benefits: [
           "Perfil visible en el marketplace",
@@ -48,7 +44,6 @@ router.get("/plans", async (req, res) => {
         cta: "Activar suscripcion",
         duration: "1 mes",
         recurring: true,
-        trialDays,
         forRole: "commerce",
         benefits: [
           "Perfil visible en la seccion Comercios",
@@ -67,7 +62,6 @@ router.get("/plans", async (req, res) => {
         cta: "Activar suscripcion",
         duration: "1 mes",
         recurring: true,
-        trialDays,
         highlighted: true,
         forRole: "company",
         benefits: [
@@ -134,7 +128,6 @@ router.get("/status", authenticate, async (req, res) => {
 
     const planPrices = { professional: PRO_PRICE, commerce: COMMERCE_PRICE, company: COMPANY_PRICE };
     const price = planPrices[plan] || PRO_PRICE;
-    const trialDays = await getTrialDays();
 
     res.json({
       success: true,
@@ -144,7 +137,6 @@ router.get("/status", authenticate, async (req, res) => {
         expiresAt,
         daysRemaining: Math.max(0, daysRemaining),
         price,
-        trialDays,
         isVisible,
         isRecurring: membership.type === "premium" && !membership.expiresAt,
       }
@@ -169,10 +161,6 @@ router.post("/create-preapproval", authenticate, async (req, res) => {
     const professional = await Professional.findOne({ userId: req.userId });
     const now = new Date();
     let startDate = new Date(now);
-
-    if (professional && professional.subscription?.status === "trial" && professional.subscription?.trialEnd) {
-      startDate = new Date(professional.subscription.trialEnd);
-    }
 
     const externalReference = `pre_${plan}_${req.userId}_${Date.now()}`;
     const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN });

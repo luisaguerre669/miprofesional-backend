@@ -226,6 +226,25 @@ const handleValidationErrors = (req, res, next) => {
 };
 
 // POST /api/v1/auth/register
+const PAYMENT_MODEL_TEXT_V1 = 'Declaro conocer y aceptar que MiProfesionalYa es una plataforma de conexión entre clientes y profesionales. Los pagos por los trabajos o servicios contratados se acuerdan y realizan directamente entre el cliente y el profesional, sin intervención de MiProfesionalYa.';
+
+function buildLegalAcceptances({ role, req, paymentModelAccepted, paymentModelVersion, termsVersion, policyVersion }) {
+  const acceptances = [];
+  const userType = role === 'employer' ? 'company' : role;
+  const now = new Date();
+  const ipAddress = req.ip || undefined;
+  if (termsVersion) {
+    acceptances.push({ kind: 'terms', accepted: true, version: termsVersion, acceptedAt: now, userType, ipAddress });
+  }
+  if (policyVersion) {
+    acceptances.push({ kind: 'privacyPolicy', accepted: true, version: policyVersion, acceptedAt: now, userType, ipAddress });
+  }
+  if (paymentModelAccepted === true && role !== 'client') {
+    acceptances.push({ kind: 'paymentModel', accepted: true, version: paymentModelVersion || 'v1', acceptedAt: now, userType, ipAddress, textSnapshot: PAYMENT_MODEL_TEXT_V1 });
+  }
+  return acceptances;
+}
+
 router.post('/register', registerLimiter, validateRegistrationSecurity, [
   body('name').trim().isLength({ min: 2, max: 100 }).withMessage('Name must be between 2 and 100 characters'),
   body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
@@ -238,10 +257,24 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
   body('address.state').optional().trim(),
   body('categoryId').optional().isMongoId().withMessage('Invalid category ID'),
   body('subcategoryId').optional().isMongoId().withMessage('Invalid subcategory ID'),
-  body('available24h').optional().isBoolean().withMessage('available24h must be a boolean')
+  body('available24h').optional().isBoolean().withMessage('available24h must be a boolean'),
+  body('paymentModelAccepted').optional().isBoolean().withMessage('paymentModelAccepted must be a boolean'),
+  body('paymentModelVersion').optional().isString().withMessage('paymentModelVersion must be a string'),
+  body('termsVersion').optional().isString().withMessage('termsVersion must be a string'),
+  body('policyVersion').optional().isString().withMessage('policyVersion must be a string')
 ], handleValidationErrors, async (req, res) => {
   try {
-    const { name, email, password, phone, location, address, role = 'client', profession, categoryId, subcategoryId, available24h, acceptMarketing, primaryCategory, commerceType, subCategories, tags } = req.body;
+    const { name, email, password, phone, location, address, role = 'client', profession, categoryId, subcategoryId, available24h, acceptMarketing, primaryCategory, commerceType, subCategories, tags, paymentModelAccepted, paymentModelVersion, termsVersion, policyVersion } = req.body;
+
+    if (role !== 'client' && paymentModelAccepted !== true) {
+      return res.status(400).json({
+        success: false,
+        error: 'Aceptacion requerida',
+        message: 'Debe aceptar la condicion de pagos entre las partes para registrarse'
+      });
+    }
+
+    const legalAcceptances = buildLegalAcceptances({ role, req, paymentModelAccepted, paymentModelVersion, termsVersion, policyVersion });
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -270,6 +303,7 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
         language: 'es',
         currency: 'ARS'
       };
+      if (legalAcceptances.length > 0) existingUser.legalAcceptances = legalAcceptances;
       existingUser.generateVerificationToken();
       await existingUser.save();
 
@@ -279,13 +313,9 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
         { isActive: false, 'subscription.status': 'inactive' }
       );
 
-      // If re-registering as professional, set up trial
+      // If re-registering as professional, reactivate profile
       if (role === 'professional') {
-        const { getTrialDays, incrementPromo } = require('../models/PromoCounter');
-        const trialDays = await getTrialDays();
-        const now = new Date();
-        const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
-          const existingPro = await Professional.findOne({ userId: existingUser._id });
+        const existingPro = await Professional.findOne({ userId: existingUser._id });
         if (existingPro) {
           existingPro.isActive = true;
           existingPro.profileStatus = 'ACTIVE';
@@ -299,11 +329,6 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
           if (commerceType) existingPro.commerceType = commerceType;
           if (subCategories) existingPro.subCategories = subCategories;
           if (tags) existingPro.tags = tags;
-          existingPro.subscription = {
-            status: 'trial',
-            trialStart: now,
-            trialEnd: trialEnd,
-          };
           await existingPro.save();
         } else {
           const proLocation = address?.street || address?.city ? {
@@ -338,21 +363,7 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
             pricing: { hourlyRate: 0, currency: 'ARS' },
             isActive: true,
             profileStatus: 'ACTIVE',
-            subscription: {
-              status: 'trial',
-              trialStart: now,
-              trialEnd: trialEnd,
-            },
           }).save();
-        }
-      }
-
-      if (role === 'professional' || role === 'company') {
-        const { incrementPromo } = require('../models/PromoCounter');
-        await incrementPromo();
-        if (existingPro) {
-          existingPro.promoApplied = true;
-          await existingPro.save();
         }
       }
 
@@ -411,6 +422,7 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
     if (phone) userData.phone = phone;
     if (location) userData.location = location;
     if (address) userData.address = { ...{ street: '', number: '', neighborhood: '', city: '', state: '', country: 'Argentina' }, ...address };
+    if (legalAcceptances.length > 0) userData.legalAcceptances = legalAcceptances;
     const user = new User(userData);
 
     user.generateVerificationToken();
@@ -419,10 +431,6 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
     // Create professional record if role is professional
     if (role === 'professional') {
       try {
-        const { getTrialDays, incrementPromo } = require('../models/PromoCounter');
-        const trialDays = await getTrialDays();
-        const now = new Date();
-        const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
         const proLocation = address?.street || address?.city ? {
           address: `${address.street || ''} ${address.number || ''}`.trim(),
           city: address.city || 'pendiente',
@@ -455,24 +463,10 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
           isActive: true,
           profileStatus: 'ACTIVE',
           available24h: available24h === true,
-          subscription: {
-            status: 'trial',
-            trialStart: now,
-            trialEnd: trialEnd,
-          },
         });
         await professional.save();
       } catch (proErr) {
         logger.error('Failed to create professional record on register', { error: proErr.message, userId: user._id });
-      }
-    }
-
-    if (role === 'professional' || role === 'company') {
-      const { incrementPromo } = require('../models/PromoCounter');
-      await incrementPromo();
-      if (professional) {
-        professional.promoApplied = true;
-        await professional.save();
       }
     }
 

@@ -5,7 +5,7 @@ const AD_ASSETS = {
   top: {
     gradient: 'from-indigo-600 to-purple-700',
     icon: 'bg-white/10',
-    title: 'Publicita en MiProfesional',
+    title: 'Publicita en MiProfesionalYa',
     desc: 'Llega a miles de clientes potenciales en tu zona',
     cta: 'Saber mas',
   },

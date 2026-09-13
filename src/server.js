@@ -26,7 +26,6 @@ const adminRoutes = require("./routes/admin");
 const analyticsRoutes = require("./routes/analytics");
 const identityRoutes = require("./routes/identity");
 const subscriptionRoutes = require("./routes/subscription");
-const promoRoutes = require("./routes/promo");
 const chatRoutes = require("./routes/chat");
 const reviewsRoutes = require("./routes/reviews");
 const ratingsRoutes = require("./routes/ratings");
@@ -182,7 +181,6 @@ class Server {
     this.app.use("/api/identity", identityRoutes);
     this.app.use("/api/subscription", subscriptionRoutes);
   this.app.use("/api/chat", chatRoutes);
-  this.app.use("/api/promo", promoRoutes);
   this.app.use("/api/reviews", reviewsRoutes);
   this.app.use("/api/ratings", ratingsRoutes);
   this.app.use("/api/v1/mercadopago", mercadopagoRoutes);

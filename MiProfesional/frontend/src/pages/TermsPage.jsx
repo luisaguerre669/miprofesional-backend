@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, ArrowLeft } from 'lucide-react';
+import { PRICES, formatARS, formatARSDecimal } from '../config/plansConfig';
 
 const TermsPage = () => {
   return (
@@ -13,11 +14,11 @@ const TermsPage = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Términos y Condiciones</h1>
-              <p className="text-sm text-gray-500">MiProfesional - Plataforma de conexión profesional</p>
+              <p className="text-sm text-gray-500">MiProfesionalYa - Plataforma de conexión profesional</p>
             </div>
           </div>
 
-          <div className="text-xs text-gray-400 mb-8">Última actualización: 31 de mayo de 2026</div>
+          <div className="text-xs text-gray-400 mb-8">Última actualización: 14 de agosto de 2026</div>
 
           <div className="prose prose-sm max-w-none text-gray-700 space-y-6">
             <section>
@@ -44,7 +45,9 @@ const TermsPage = () => {
               </p>
               <p className="mt-2">
                 MiProfesional no es parte de la relación contractual que se genere entre Cliente y Profesional. 
-                La Plataforma no interviene en la negociación, ejecución, pago o postventa de los servicios acordados.
+                La Plataforma no interviene en la negociación, ejecución, pago o postventa de los servicios acordados. 
+                La información de precios o tarifas que se muestre en los perfiles tiene carácter exclusivamente informativo 
+                y no constituye una oferta de cobro por parte de la Plataforma.
               </p>
             </section>
 
@@ -80,17 +83,53 @@ const TermsPage = () => {
               <p>MiProfesional ofrece los siguientes planes:</p>
               <ul className="list-disc pl-5 space-y-1 mt-2">
                 <li><strong>Plan Gratuito (Cliente):</strong> acceso gratuito para búsqueda de profesionales y gestión de CV propio.</li>
-                <li><strong>Plan Profesional:</strong> suscripción mensual de $5.000 ARS para profesionales que deseen ofrecer sus servicios en la Plataforma.</li>
-                <li><strong>Plan Empresa:</strong> suscripción mensual de $20.000 ARS para empresas que requieran acceso a la base de currículums.</li>
+                <li><strong>Plan Profesional:</strong> suscripción mensual de {formatARSDecimal(PRICES.professional)} ARS para profesionales que deseen ofrecer sus servicios en la Plataforma.</li>
+                <li><strong>Plan Comercio:</strong> suscripción mensual de {formatARSDecimal(PRICES.commerce)} ARS para comercios que deseen ofrecer sus productos y servicios.</li>
+                <li><strong>Plan Empresa:</strong> suscripción mensual de {formatARSDecimal(PRICES.company)} ARS para empresas que requieran acceso a la base de currículums.</li>
               </ul>
               <p className="mt-2">
                 Las suscripciones se renuevan automáticamente. El Usuario puede cancelar en cualquier momento. 
                 La falta de pago resultará en la suspensión del acceso a las funcionalidades premium.
               </p>
+              <p className="mt-2">
+                Los pagos asociados a los Planes y Suscripciones se procesan a través de Mercado Pago 
+                únicamente por servicios propios de la Plataforma, conforme a la sección siguiente.
+              </p>
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">6. Limitación de Responsabilidad</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">6. Pagos y ausencia de intermediación financiera entre usuarios</h2>
+              <p>
+                MiProfesionalYa distingue dos circuitos económicos totalmente independientes:
+              </p>
+              <ul className="list-disc pl-5 space-y-1 mt-2">
+                <li><strong>Pagos a MiProfesionalYa:</strong> la Plataforma cobra únicamente por sus propios servicios: 
+                  suscripciones (Plan Profesional, Plan Comercio y Plan Empresa) y, en el futuro, servicios de publicidad 
+                  (anuncios, banners y posicionamiento destacado). Estos pagos se procesan exclusivamente a través de Mercado Pago 
+                  y son la única relación económica entre el Usuario y la Plataforma.</li>
+                <li><strong>Pagos entre Cliente y Profesional:</strong> el precio de los trabajos o servicios contratados 
+                  a través de la Plataforma se acuerda y abona directamente entre el Cliente y el Profesional, 
+                  por los medios que ambas partes elijan. MiProfesionalYa no recibe, cobra, administra, retiene, 
+                  custodia ni distribuye el dinero correspondiente a estos trabajos.</li>
+              </ul>
+              <p className="mt-2">
+                En consecuencia, MiProfesionalYa no actúa como agente de pago, intermediario financiero, 
+                depositario, escrow, fiduciario ni partícipe de los pagos correspondientes al trabajo contratado 
+                entre Cliente y Profesional, y no percibe comisión alguna sobre el valor de dichos trabajos.
+              </p>
+              <p className="mt-2">
+                Al registrarse como Profesional, Comercio o Empresa, el Usuario declara conocer y aceptar expresamente esta condición, 
+                y el hecho es registrado por la Plataforma con fines de trazabilidad y prueba.
+              </p>
+              <p className="mt-2">
+                Las previsiones de esta sección constituyen la delimitación del modelo de negocio de la Plataforma 
+                y no excluyen las obligaciones que la legislación aplicable imponga. Su contenido no constituye asesoramiento 
+                legal y no modifica los derechos u obligaciones que las normas vigentes establezcan para las partes intervinientes.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">7. Limitación de Responsabilidad</h2>
               <p>
                 MiProfesional no será responsable por:
               </p>
@@ -104,7 +143,7 @@ const TermsPage = () => {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">7. Privacidad y Datos Personales</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">8. Privacidad y Datos Personales</h2>
               <p>
                 MiProfesional trata los datos personales de acuerdo con su Política de Privacidad. 
                 Los datos proporcionados por los Usuarios serán utilizados exclusivamente para los fines 
@@ -117,7 +156,7 @@ const TermsPage = () => {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">8. Suspensión y Baja</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">9. Suspensión y Baja</h2>
               <p>
                 MiProfesional se reserva el derecho de suspender o cancelar cuentas que:
               </p>
@@ -133,7 +172,7 @@ const TermsPage = () => {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">9. Propiedad Intelectual</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">10. Propiedad Intelectual</h2>
               <p>
                 Todos los derechos de propiedad intelectual sobre la Plataforma, su diseño, código, 
                 marca y contenido son propiedad de MiProfesional. Queda prohibida la reproducción, 
@@ -142,7 +181,7 @@ const TermsPage = () => {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">10. Legislación Aplicable</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">11. Legislación Aplicable</h2>
               <p>
                 Estos Términos y Condiciones se rigen por las leyes de la República Argentina. 
                 Toda controversia será sometida a los tribunales ordinarios de la Ciudad Autónoma de Buenos Aires.
@@ -150,7 +189,7 @@ const TermsPage = () => {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">11. Modificaciones</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">12. Modificaciones</h2>
               <p>
                 MiProfesional se reserva el derecho de modificar estos Términos y Condiciones en 
                 cualquier momento. Las modificaciones serán comunicadas a los Usuarios a través de 
@@ -159,7 +198,7 @@ const TermsPage = () => {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">12. Contacto</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">13. Contacto</h2>
               <p>
                 Para consultas sobre estos Términos y Condiciones, contactar a través de los canales 
                 de soporte disponibles en la Plataforma.

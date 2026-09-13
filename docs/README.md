@@ -208,7 +208,6 @@ src/
     Payment.js
     PaymentAudit.js
     Professional.js
-    PromoCounter.js
     Review.js
     User.js
   routes/

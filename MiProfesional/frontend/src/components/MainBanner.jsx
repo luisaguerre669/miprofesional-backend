@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, Clock, Store, Shield, ChevronLeft, ChevronRight, Sparkles, Gift, AlertTriangle, XCircle } from 'lucide-react';
-import { usePromo } from '../hooks/usePromo';
-import { getPromoLabel } from '../utils/promoLabels';
+import { Search, MapPin, Clock, Store, Shield, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import './MainBanner.css';
 
 const galleryImages = [
@@ -22,8 +20,6 @@ const trustItems = [
 export default function MainBanner() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
-  const promo = usePromo();
-  const promoLabel = getPromoLabel(promo.remaining);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -105,34 +101,6 @@ export default function MainBanner() {
         </div>
       </div>
 
-      {/* PROMO BANNER */}
-      {promoLabel.done ? (
-        <div className="main-banner-promo-slot" aria-label="Promocion finalizada">
-          <span className="promo-slot-label">Promoción de lanzamiento</span>
-          <div className="promo-slot-finished block no-underline">
-            <div className="promo-slot-content">
-              <XCircle size={18} className="text-gray-400" />
-              <span className="promo-slot-text text-gray-400">
-                <strong>PROMOCIÓN DE LANZAMIENTO</strong> — Los 700 cupos fueron asignados. La promoción ha finalizado.
-              </span>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className={`main-banner-promo-slot ${promoLabel.critical ? 'promo-urgent' : promoLabel.urgent ? 'promo-low' : ''}`} aria-label="Promocion 60 dias gratis">
-          <span className="promo-slot-label">Promoción de lanzamiento</span>
-          <Link to="/register" className="promo-slot-active block no-underline">
-            <div className="promo-slot-content">
-              {promoLabel.critical ? <AlertTriangle size={18} className="text-red-500" /> : <Gift size={18} />}
-              <span className="promo-slot-text">
-                <strong>PROMOCIÓN DE LANZAMIENTO</strong> — 60 DÍAS GRATIS para los primeros 700 suscriptores entre Profesionales, Comercios y Empresas.
-              </span>
-              <span className="promo-slot-counter">{promoLabel.label}</span>
-              <span className="promo-slot-cta">Registrarme ahora →</span>
-            </div>
-          </Link>
-        </div>
-      )}
-    </section>
+      </section>
   );
 }

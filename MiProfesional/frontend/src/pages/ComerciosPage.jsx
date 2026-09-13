@@ -117,7 +117,7 @@ export default function ComerciosPage() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">¿Tenés un comercio?</h2>
           <p className="text-amber-100 text-sm md:text-base mb-6 max-w-lg mx-auto">
-            Sumá tu negocio a MiProfesional y aparecé en las búsquedas de cientos de clientes cerca de tu zona.
+            Sumá tu negocio a MiProfesionalYa y aparecé en las búsquedas de cientos de clientes cerca de tu zona.
           </p>
           <Link
             to="/register?role=professional"

@@ -153,7 +153,7 @@ const Login = () => {
               <LogIn className="text-white" size={32} />
             </div>
             <h1 className="text-2xl font-bold text-gray-900">Iniciar Sesion</h1>
-            <p className="text-gray-500 mt-1 text-sm">Ingresa a tu cuenta de MiProfesional</p>
+            <p className="text-gray-500 mt-1 text-sm">Ingresa a tu cuenta de MiProfesionalYa</p>
           </div>
 
           {error && (

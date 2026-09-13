@@ -46,11 +46,6 @@ const CategoryPage = () => {
   );
 
   if (!category) {
-    // Redirect commerce category to dedicated page
-    if (slug === 'comercio') {
-      window.location.href = '/comercios';
-      return null;
-    }
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center">
         <h2 className="text-xl font-bold text-gray-900">Categoría no encontrada</h2>
@@ -64,7 +59,7 @@ const CategoryPage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-10">
       <Helmet>
-        <title>{category.title} — Profesionales en MiProfesional</title>
+        <title>{category.title} — Profesionales en MiProfesionalYa</title>
         <meta name="description" content={category.description?.slice(0, 160)} />
         <link rel="canonical" href={`https://www.miprofesional.online/categoria/${category.slug}`} />
       </Helmet>

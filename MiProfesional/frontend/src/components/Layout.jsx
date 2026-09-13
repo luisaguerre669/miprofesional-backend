@@ -37,15 +37,21 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen app-shell">
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 safe-area-top ${
-        scrolled ? 'bg-white/95 backdrop-blur-xl shadow-sm border-b border-gray-200' : 'bg-transparent'
+        location.pathname === '/' ? 'hidden' : (scrolled ? 'app-header app-header-scrolled' : 'app-header')
       }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16 md:h-20">
+        <div className="topbar">
+          <a href="#">Facebook</a>
+          <a href="#">Instagram</a>
+          <a href="#">YouTube</a>
+        </div>
+
+        <div className="mainnav-wrap">
+          <div className="mainnav max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Logo variant="horizontal" />
 
-            <nav className="hidden lg:flex items-center space-x-1">
+            <nav className="hidden lg:flex navlinks">
               {[
                 { name: 'Inicio', path: '/', icon: Home },
                 { name: 'Profesionales', path: '/search', icon: Briefcase },
@@ -57,9 +63,7 @@ const Layout = ({ children }) => {
                 const isActive = location.pathname === link.path;
                 return (
                   <Link key={`nav-${idx}-${link.path}`} to={link.path}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
-                      isActive ? 'text-primary-600 bg-primary-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    }`}
+                    className={`navlink ${isActive ? 'active' : ''}`}
                   >
                     <Icon size={17} />
                     <span>{link.name}</span>
@@ -71,25 +75,19 @@ const Layout = ({ children }) => {
             <div className="hidden lg:flex items-center gap-3">
               {isAuthenticated ? (
                 <>
-                  <Link to="/messages"
-                    className="p-2.5 rounded-xl text-gray-500 hover:text-primary-600 hover:bg-gray-100 transition-all relative"
-                  >
+                  <Link to="/messages" className="header-icon-link">
                     <MessageSquare size={20} />
                   </Link>
-                  <Link to="/notifications"
-                    className="p-2.5 rounded-xl text-gray-500 hover:text-primary-600 hover:bg-gray-100 transition-all relative"
-                  >
+                  <Link to="/notifications" className="header-icon-link">
                     <Bell size={20} />
                   </Link>
                   {!isProfessional && (
-                    <Link to="/register?role=professional"
-                      className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-all shadow-lg"
-                    >
+                    <Link to="/register?role=professional" className="header-btn-gold">
                       <Plus size={16} />
                       Publicar Servicio
                     </Link>
                   )}
-                  <div className="relative flex items-center gap-2 pl-2 border-l border-gray-200">
+                  <div className="relative flex items-center gap-2 pl-2 border-l border-white/10">
                     <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer">
                       <div className="w-9 h-9 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-bold">
                         {user?.name?.charAt(0) || 'U'}
@@ -147,21 +145,9 @@ const Layout = ({ children }) => {
                 </>
               ) : (
                 <>
-                  <Link to="/login"
-                    className="px-5 py-2.5 text-sm font-medium text-gray-700 hover:text-primary-600 transition-colors"
-                  >
-                    Iniciar Sesión
-                  </Link>
-                  <Link to="/register"
-                    className="px-5 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-all shadow-lg"
-                  >
-                    Registrarse
-                  </Link>
-                  <Link to="/register?role=company"
-                    className="px-4 py-2.5 border-2 border-amber-500 text-amber-600 rounded-xl text-sm font-semibold hover:bg-amber-50 transition-all"
-                  >
-                    Soy Empresa
-                  </Link>
+                  <Link to="/login" className="header-text-link">Iniciar Sesión</Link>
+                  <Link to="/register" className="header-btn-primary">Registrarse</Link>
+                  <Link to="/register?role=company" className="header-btn-outline">Soy Empresa</Link>
                 </>
               )}
             </div>

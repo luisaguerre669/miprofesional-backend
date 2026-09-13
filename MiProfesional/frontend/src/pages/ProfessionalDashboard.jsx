@@ -7,16 +7,14 @@ import {
   BarChart3, TrendingUp, Award, MessageSquare, Eye, Settings,
   Edit3, BadgeCheck, ChevronRight, Bell, Shield, Briefcase,
   Upload, Image as ImageIcon, Trash2, Plus, CreditCard, AlertTriangle,
-  Sparkles, Gift, ExternalLink, RefreshCw, FileText, ArrowRight
+  Sparkles, ExternalLink, FileText, ArrowRight
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import DashboardStats from '../components/dashboard/StatsCards';
-import { usePromo } from '../hooks/usePromo';
-import { getCounterText } from '../utils/promoLabels';
+import { PRICES, formatARS, formatARSDecimal } from '../config/plansConfig';
 
 const ProfessionalDashboard = () => {
   const { user } = useAuth();
-  const promo = usePromo();
   const [bookings, setBookings] = useState([]);
   const [myProfile, setMyProfile] = useState(null);
   const [stats, setStats] = useState({
@@ -100,7 +98,7 @@ const ProfessionalDashboard = () => {
   const handleCreatePayment = async () => {
     setCreatingPayment(true);
     try {
-      const r = await api.post('/subscription/create-preapproval', { plan: 'monthly' });
+      const r = await api.post('/subscription/create-preapproval', { plan: 'professional' });
       if (r.data.data.initPoint) {
         window.open(r.data.data.initPoint, '_blank');
       }
@@ -197,11 +195,11 @@ const ProfessionalDashboard = () => {
           </h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
               <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip />
-              <Bar dataKey="bookings" fill="#0f7a5a" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="bookings" fill="#1f4fd8" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -211,11 +209,11 @@ const ProfessionalDashboard = () => {
           </h3>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
               <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip formatter={(v) => `$${v.toLocaleString()}`} />
-              <Line type="monotone" dataKey="revenue" stroke="#0f7a5a" strokeWidth={2} dot={{ fill: '#0f7a5a', r: 4 }} />
+              <Line type="monotone" dataKey="revenue" stroke="#1f4fd8" strokeWidth={2} dot={{ fill: '#e5a50d', r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -397,57 +395,6 @@ const ProfessionalDashboard = () => {
                     </div>
                   )}
 
-                  {(subscription.status === 'trial' && subscription.daysRemaining > 0) && (
-                    <>
-                      <div className="p-5 rounded-xl border bg-primary-50 border-primary-200">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 rounded-xl bg-primary-500/20 flex items-center justify-center">
-                              <Gift size={20} className="text-primary-600" />
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-gray-900 text-sm">Periodo de prueba</h4>
-                              <p className="text-xs text-gray-500">
-                                Disfrutá tu periodo gratuito sin cargo. Tu perfil esta visible para clientes.
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-primary-600 font-medium">{subscription.daysRemaining} dias restantes</p>
-                          </div>
-                        </div>
-                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full bg-primary-500 transition-all"
-                            style={{ width: `${Math.min(100, (subscription.daysRemaining / 30) * 100)}%` }} />
-                        </div>
-                        {promo.active && (
-                          <p className={`text-[11px] font-semibold mt-2 ${promo.remaining <= 20 ? 'text-red-600 animate-pulse' : promo.remaining <= 100 ? 'text-amber-600' : 'text-gray-500'}`}>
-                            {getCounterText(promo.remaining)}
-                          </p>
-                        )}
-                      </div>
-                      <div className="p-4 bg-white rounded-xl border border-gray-200">
-                        <div className="flex items-start gap-3">
-                          <RefreshCw size={18} className="text-primary-500 shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">Luego $5.000/mes</p>
-                            <p className="text-xs text-gray-600 mt-1">
-                              Al finalizar los 60 días gratis, se activara automaticamente tu suscripcion recurrente de <strong>$5.000 ARS/mes</strong>.
-                              Sin cargos anticipados. Podes cancelar cuando quieras.
-                            </p>
-                            <button onClick={handleCreatePayment}
-                              disabled={creatingPayment}
-                              className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white font-bold text-xs rounded-xl hover:bg-primary-700 transition-all disabled:opacity-50"
-                            >
-                              {creatingPayment ? 'Procesando...' : <>Activar suscripcion ahora <ArrowRight size={14} /></>}
-                            </button>
-                            <p className="text-[10px] text-gray-400 mt-1.5">Al activar ahora, el cobro comenzara al finalizar los 60 días gratis.</p>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
                   {(subscription.status === 'suspended') && (
                     <>
                       <div className="p-5 rounded-xl border bg-red-50 border-red-200">
@@ -455,18 +402,18 @@ const ProfessionalDashboard = () => {
                           <AlertTriangle size={18} className="text-red-500" />
                           <h4 className="font-bold text-gray-900 text-sm">Periodo Gratuito Finalizado</h4>
                         </div>
-                        <p className="text-xs text-red-700 mb-4">Tu perfil ya no es visible. Activa tu suscripcion de $5.000/mes para seguir apareciendo en el marketplace.</p>
+                        <p className="text-xs text-red-700 mb-4">Tu perfil ya no es visible. Activa tu suscripcion de {formatARS(PRICES.professional)}/mes para seguir apareciendo en el marketplace.</p>
                       </div>
                       <button onClick={handleCreatePayment}
                         disabled={creatingPayment}
                         className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-all disabled:opacity-50 shadow-lg shadow-primary-500/25"
                       >
-                        {creatingPayment ? 'Generando pago...' : <>Activar suscripcion $5.000/mes <ArrowRight size={16} /></>}
+                        {creatingPayment ? 'Generando pago...' : <>Activar suscripcion {formatARS(PRICES.professional)}/mes <ArrowRight size={16} /></>}
                       </button>
                     </>
                   )}
 
-                  {(subscription.status === 'inactive' || subscription.status === 'pending_payment') && (
+                  {(subscription.status === 'inactive' || subscription.status === 'pending_payment' || subscription.status === 'trial') && (
                     <>
                       <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
                         <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
@@ -479,7 +426,7 @@ const ProfessionalDashboard = () => {
                         disabled={creatingPayment}
                         className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-all disabled:opacity-50 shadow-lg shadow-primary-500/25"
                       >
-                        {creatingPayment ? 'Generando pago...' : <>Activar suscripcion $5.000/mes <ArrowRight size={16} /></>}
+                        {creatingPayment ? 'Generando pago...' : <>Activar suscripcion {formatARS(PRICES.professional)}/mes <ArrowRight size={16} /></>}
                       </button>
                     </>
                   )}
@@ -494,13 +441,13 @@ const ProfessionalDashboard = () => {
                       <button onClick={handleCreatePayment}
                         disabled={creatingPayment}
                         className="w-full px-4 py-2.5 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 text-sm disabled:opacity-50"
-                      >Renovar $5.000 ARS / mes</button>
+                      >Renovar {formatARSDecimal(PRICES.professional)} ARS / mes</button>
                     </div>
                   )}
 
                   <div className="p-5 bg-gray-50 rounded-xl border border-gray-200">
                     <h4 className="font-bold text-gray-900 text-sm mb-2">Que incluye tu suscripcion</h4>
-                    <p className="text-xs text-gray-500">{promo.active ? `60 días gratis para los primeros 700 suscriptores (${getCounterText(promo.remaining)}), luego $5.000/mes.` : 'Promoción de lanzamiento finalizada. $5.000/mes.'} Acceso completo a la plataforma: tu perfil aparece en los resultados de busqueda del marketplace y los clientes pueden contactarte directamente. Cancelas cuando quieras.</p>
+                    <p className="text-xs text-gray-500">Suscripcion de {formatARS(PRICES.professional)}/mes. Acceso completo a la plataforma: tu perfil aparece en los resultados de busqueda del marketplace y los clientes pueden contactarte directamente. Cancelas cuando quieras.</p>
                   </div>
 
                   {subscription.isVisible === false && (

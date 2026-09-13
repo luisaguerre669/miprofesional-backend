@@ -290,10 +290,8 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
         { isActive: false, 'subscription.status': 'inactive' }
       );
 
-      // If re-registering as professional, set up trial
+      // If re-registering as professional, reactivate profile
       if (role === 'professional') {
-        const now = new Date();
-        const trialEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
         const existingPro = await Professional.findOne({ userId: existingUser._id });
         if (existingPro) {
           existingPro.isActive = true;
@@ -306,11 +304,6 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
           if (disponibleFeriados !== undefined) existingPro.disponibleFeriados = disponibleFeriados;
           if (atencionInmediata !== undefined) existingPro.atencionInmediata = atencionInmediata;
           if (servicioADomicilio !== undefined) existingPro.servicioADomicilio = servicioADomicilio;
-          existingPro.subscription = {
-            status: 'trial',
-            trialStart: now,
-            trialEnd: trialEnd,
-          };
           await existingPro.save();
         } else {
           await new Professional({
@@ -331,11 +324,6 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
             pricing: { hourlyRate: 0, currency: 'ARS' },
             isActive: true,
             profileStatus: 'ACTIVE',
-            subscription: {
-              status: 'trial',
-              trialStart: now,
-              trialEnd: trialEnd,
-            },
           }).save();
         }
       }
@@ -405,8 +393,6 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
     // Create professional record if role is professional
     if (role === 'professional') {
       try {
-        const now = new Date();
-        const trialEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
         const professional = new Professional({
           userId: user._id,
           businessName: name,
@@ -431,11 +417,6 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
           disponibleFeriados: disponibleFeriados === true,
           atencionInmediata: atencionInmediata === true,
           servicioADomicilio: servicioADomicilio === true,
-          subscription: {
-            status: 'trial',
-            trialStart: now,
-            trialEnd: trialEnd,
-          },
         });
         await professional.save();
       } catch (proErr) {

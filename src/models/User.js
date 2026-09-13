@@ -168,7 +168,37 @@ const userSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
-  }
+  },
+  legalAcceptances: [{
+    kind: {
+      type: String,
+      enum: ['terms', 'privacyPolicy', 'paymentModel'],
+      required: true
+    },
+    accepted: {
+      type: Boolean,
+      required: true
+    },
+    version: {
+      type: String,
+      required: true
+    },
+    acceptedAt: {
+      type: Date,
+      default: Date.now
+    },
+    userType: {
+      type: String,
+      trim: true
+    },
+    ipAddress: {
+      type: String,
+      trim: true
+    },
+    textSnapshot: {
+      type: String
+    }
+  }]
 }, {
   timestamps: true,
   toJSON: { virtuals: true },

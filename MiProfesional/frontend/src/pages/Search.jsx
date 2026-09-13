@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import MapView from '../components/MapView';
 import { getAccurateLocation } from '../utils/geolocation';
-import commerceCategories from '../data/commerceCategories';
 
 // Términos de búsqueda que corresponden a la categoría COMERCIO
 const COMMERCE_TERMS = [
@@ -92,8 +91,6 @@ const Search = () => {
   const [filters, setFilters] = useState({
     category: searchParams.get('category') || '',
     subcategory: searchParams.get('subcategory') || '',
-    subCategory: searchParams.get('subCategory') || '',
-    subCategories: searchParams.get('subCategories') || '',
     minRating: 0,
     maxPrice: '',
     verified: false,
@@ -101,7 +98,6 @@ const Search = () => {
     sortBy: '',
     location: '',
     primaryCategory: '',
-    commerceType: '',
   });
 
   useEffect(() => {
@@ -142,9 +138,6 @@ const Search = () => {
       if (cat) params.categoryIds = JSON.stringify([cat]);
       if (disp247) params.disponibilidad = '24-7';
       if (filters.primaryCategory) params.primaryCategory = filters.primaryCategory;
-      if (filters.commerceType) params.commerceType = filters.commerceType;
-      if (filters.subCategory) params.subCategory = filters.subCategory;
-      if (filters.subCategories) params.subCategories = filters.subCategories;
       api.get('/professionals/search', { params })
         .then(r => setProfessionals(r.data.data || []))
         .catch(e => console.error('Search error:', e))
@@ -185,9 +178,6 @@ const Search = () => {
       if (filterOpts.featured) params.featured = true;
       if (filterOpts.sortBy) params.sortBy = filterOpts.sortBy;
       if (filterOpts.primaryCategory) params.primaryCategory = filterOpts.primaryCategory;
-      if (filterOpts.commerceType) params.commerceType = filterOpts.commerceType;
-      if (filterOpts.subCategory) params.subCategory = filterOpts.subCategory;
-      if (filterOpts.subCategories) params.subCategories = filterOpts.subCategories;
       if (disp247 || disponibilidad247) params.disponibilidad = '24-7';
       if (filterDisponible24hs) params.disponible24hs = true;
       if (filterAtencionInmediata) params.atencionInmediata = true;
@@ -225,8 +215,6 @@ const Search = () => {
     const p = {};
     if (query.trim()) p.q = query;
     if (disponibilidad247) p.disponibilidad = '24-7';
-    if (filters.subCategory) p.subCategory = filters.subCategory;
-    if (filters.subCategories) p.subCategories = filters.subCategories;
     if (filters.primaryCategory) p.primaryCategory = filters.primaryCategory;
     setSearchParams(p);
     // Detectar términos comerciales en tiempo real
@@ -239,7 +227,11 @@ const Search = () => {
   };
 
   const applyCommerceCategory = () => {
-    window.location.href = '/comercios';
+    if (!commerceCategoryId) return;
+    const newFilters = { ...filters, category: commerceCategoryId, subcategory: '' };
+    setFilters(newFilters);
+    setCommerceSuggestion(false);
+    searchProfessionals(query, newFilters, disponibilidad247);
   };
 
   const clear247 = () => {
@@ -247,8 +239,6 @@ const Search = () => {
     const p = {};
     if (query.trim()) p.q = query;
     if (filters.category) p.category = filters.category;
-    if (filters.subCategory) p.subCategory = filters.subCategory;
-    if (filters.subCategories) p.subCategories = filters.subCategories;
     if (filters.primaryCategory) p.primaryCategory = filters.primaryCategory;
     setSearchParams(p);
     searchProfessionals(query, filters, false);
@@ -267,7 +257,7 @@ const Search = () => {
   return (
     <>
     <Helmet>
-      <title>Buscar Profesionales — MiProfesional</title>
+      <title>Buscar Profesionales — MiProfesionalYa</title>
       <meta name="description" content="Encuentra profesionales verificados. Filtra por categoría, ubicación, rating y precio." />
     </Helmet>
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -353,7 +343,7 @@ const Search = () => {
           )}
         </form>
 
-        {(filters.category || filters.minRating > 0 || filters.maxPrice || filters.verified || filters.featured || filters.primaryCategory || filters.commerceType || filters.subCategory || filters.subCategories) && (
+        {(filters.category || filters.minRating > 0 || filters.maxPrice || filters.verified || filters.featured || filters.primaryCategory) && (
           <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
             {filters.category && (
               <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary-50 text-primary-700 rounded-lg text-sm">
@@ -364,19 +354,7 @@ const Search = () => {
             {filters.primaryCategory && (
               <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-sm">
                 {filters.primaryCategory === 'professional' ? 'Profesionales' : filters.primaryCategory === 'empresa' ? 'Empresas' : 'Comercios'}
-                <button onClick={() => { setFilters({...filters, primaryCategory: '', commerceType: '', subCategory: '', subCategories: ''}); applyFilters(); }}><X size={14} /></button>
-              </span>
-            )}
-            {filters.subCategory && (
-              <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-sm">
-                {commerceCategories.find(c => c.slug === filters.subCategory)?.title || filters.subCategory}
-                <button onClick={() => { setFilters({...filters, subCategory: ''}); applyFilters(); }}><X size={14} /></button>
-              </span>
-            )}
-            {filters.commerceType && (
-              <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-sm">
-                {filters.commerceType.charAt(0).toUpperCase() + filters.commerceType.slice(1)}
-                <button onClick={() => { setFilters({...filters, commerceType: ''}); applyFilters(); }}><X size={14} /></button>
+                <button onClick={() => { setFilters({...filters, primaryCategory: ''}); applyFilters(); }}><X size={14} /></button>
               </span>
             )}
             {filters.minRating > 0 && (
@@ -425,7 +403,7 @@ const Search = () => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tipo de Perfil</label>
-              <select value={filters.primaryCategory} onChange={e => setFilters({...filters, primaryCategory: e.target.value, commerceType: ''})}
+              <select value={filters.primaryCategory} onChange={e => setFilters({...filters, primaryCategory: e.target.value})}
                 className="w-full p-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
               >
                 <option value="">Todos</option>
@@ -434,33 +412,6 @@ const Search = () => {
                 <option value="comercio">Comercios</option>
               </select>
             </div>
-
-            {filters.primaryCategory === 'comercio' && (
-              <>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Rubros</label>
-                <select value={filters.subCategories} onChange={e => setFilters({...filters, subCategories: e.target.value})}
-                  className="w-full p-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-                >
-                  <option value="">Todos</option>
-                  {commerceCategories.map(cat => (
-                    <option key={cat.slug} value={cat.slug}>{cat.title}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tipo de Comercio</label>
-                <select value={filters.commerceType} onChange={e => setFilters({...filters, commerceType: e.target.value})}
-                  className="w-full p-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-                >
-                  <option value="">Todos</option>
-                  <option value="minorista">Minorista</option>
-                  <option value="mayorista">Mayorista</option>
-                  <option value="mixto">Mixto</option>
-                </select>
-              </div>
-              </>
-            )}
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Rating mínimo</label>
@@ -727,18 +678,6 @@ const Search = () => {
               </div>
             </Link>
           ))}
-        </div>
-      ) : filters.primaryCategory === 'comercio' ? (
-        <div className="text-center py-16 max-w-md mx-auto">
-          <Store size={56} className="mx-auto text-amber-300 mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Todavía no hay comercios publicados en este rubro</h3>
-          <p className="text-gray-500 text-sm mb-6">Registrá el primero y obtené mayor visibilidad.</p>
-          <Link
-            to="/register?role=professional"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition-all shadow-lg"
-          >
-            <Store size={18} /> Registrar mi comercio
-          </Link>
         </div>
       ) : (
         <div className="text-center py-20">

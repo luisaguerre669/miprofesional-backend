@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Loader2, CheckCircle, XCircle, ArrowRight, Crown, Building2, Briefcase, Store, Sparkles, CreditCard } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, ArrowRight, Crown, Building2, Briefcase, Store, Sparkles, CreditCard, Clock } from 'lucide-react';
 import api from '../lib/axios';
 import { useAuth } from '../context/AuthContext';
+import { PRICES, SEMESTER_PLANS, SEMESTER_DISCOUNT_PCT, SEMESTER_AVAILABLE_IN_MP, formatARS } from '../config/plansConfig';
 
 export default function SubscriptionPage() {
   const { user } = useAuth();
@@ -30,7 +31,7 @@ export default function SubscriptionPage() {
     setActionLoading(planId);
     setMessage(null);
     try {
-      const res = await api.post('/subscription/create-preference', { plan: planId });
+      const res = await api.post('/subscription/create-preapproval', { plan: planId });
       const initPoint = res.data?.data?.initPoint || res.data?.initPoint;
       if (initPoint) {
         window.location.href = initPoint;
@@ -82,7 +83,7 @@ export default function SubscriptionPage() {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-10 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Planes MiProfesional</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Planes MiProfesionalYa</h1>
           <p className="text-gray-500">
             {isCompany
               ? 'Elegí el plan ideal para encontrar los mejores talentos'
@@ -106,7 +107,7 @@ export default function SubscriptionPage() {
             <CheckCircle size={20} className="text-primary-600 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-primary-800">
-                {currentStatus === 'trial' ? 'Período de prueba activo' : 'Suscripción activa'}
+                Suscripción activa
               </p>
               <p className="text-xs text-primary-700 mt-0.5">
                 Plan {currentPlan === 'company' ? 'Empresa' : currentPlan === 'professional' ? 'Profesional' : 'Mensual'}
@@ -164,7 +165,7 @@ export default function SubscriptionPage() {
                       <span className="text-4xl font-black text-gray-900">${plan.price.toLocaleString('es-AR')}</span>
                       <span className="text-gray-500 text-sm">ARS</span>
                     </div>
-                    <p className="text-xs text-gray-400">{plan.trialDays ? `${plan.trialDays} días gratis` : 'Suscripción mensual'}</p>
+                    <p className="text-xs text-gray-400">Suscripción mensual</p>
                   </div>
 
                   <p className="text-sm text-gray-600 mb-4">{plan.description}</p>
@@ -209,6 +210,62 @@ export default function SubscriptionPage() {
               </div>
             );
           })}
+        </div>
+
+        <div className="mt-10">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Clock size={20} className="text-primary-600" />
+            <h2 className="text-2xl font-bold text-gray-900">Pago semestral</h2>
+          </div>
+          <p className="text-center text-sm text-gray-500 mb-6">
+            Pagá 6 meses por adelantado y ahorrá un {SEMESTER_DISCOUNT_PCT}%. Descuento aplicado sobre el valor mensual.
+          </p>
+
+          {!SEMESTER_AVAILABLE_IN_MP && (
+            <div className="mb-6 mx-auto max-w-lg flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium bg-amber-50 text-amber-700 border border-amber-200 justify-center">
+              <Clock size={16} /> Próximamente. Esta modalidad de pago aún no está habilitada.
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {Object.entries(SEMESTER_PLANS).map(([planId, sem]) => {
+              const monthly = PRICES[planId] || 0;
+              const iconMap = { professional: Briefcase, commerce: Store, company: Building2 };
+              const Icon = iconMap[planId] || Briefcase;
+              const nameMap = { professional: 'Profesional', commerce: 'Comercio', company: 'Empresa' };
+              return (
+                <div
+                  key={planId}
+                  className={`relative bg-white rounded-2xl border-2 border-dashed p-6 sm:p-8 text-center ${
+                    SEMESTER_AVAILABLE_IN_MP ? 'border-gray-300' : 'border-gray-200 bg-gray-50/50'
+                  }`}
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 ${
+                    planId === 'company' ? 'bg-purple-100' : planId === 'commerce' ? 'bg-amber-100' : 'bg-primary-50'
+                  }`}>
+                    <Icon size={24} className={
+                      planId === 'company' ? 'text-purple-600' : planId === 'commerce' ? 'text-amber-600' : 'text-primary-600'
+                    } />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">{nameMap[planId]}</h3>
+                  <p className="text-xs text-gray-400 mb-4">{formatARS(monthly)}/mes · 6 meses</p>
+                  <div className="flex items-baseline justify-center gap-2 mb-1">
+                    <span className="text-3xl font-black text-gray-900">{formatARS(sem.discounted)}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-2">
+                    <span className="line-through text-gray-400">{formatARS(sem.total6)}</span>{' '}
+                    <span className="font-semibold text-green-600">Ahorrás {formatARS(sem.savings)}</span>
+                  </p>
+                  <button
+                    disabled
+                    className="w-full py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 bg-gray-200 text-gray-500"
+                  >
+                    Próximamente
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div className="mt-8 bg-gray-50 rounded-xl border border-gray-200 p-5 text-center">

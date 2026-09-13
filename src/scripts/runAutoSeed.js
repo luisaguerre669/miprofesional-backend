@@ -1,13 +1,32 @@
 const Category = require('../models/Category');
 const mongoose = require('mongoose');
 const categoriesData = require('./categoryData');
+const logger = require('../utils/logger');
 
 async function runAutoSeed() {
   const Professional = mongoose.model('Professional');
   let totalSubs = 0;
 
   for (const catData of categoriesData) {
-    const { subcategories, ...mainData } = catData;
+    const { subcategories: rawSubcategories, ...mainData } = catData;
+    const subcategories = Array.isArray(rawSubcategories) ? rawSubcategories : [];
+
+    if (rawSubcategories !== undefined && !Array.isArray(rawSubcategories)) {
+      logger.warn('Category sync received invalid subcategories structure', {
+        category: mainData.title,
+        slug: mainData.slug,
+        receivedType: typeof rawSubcategories,
+        receivedKeys: rawSubcategories && typeof rawSubcategories === 'object' ? Object.keys(rawSubcategories) : [],
+      });
+    }
+
+    if (rawSubcategories === undefined) {
+      logger.info('Category sync has no relational subcategories', {
+        category: mainData.title,
+        slug: mainData.slug,
+        commerceSubcategories: mainData.commerceSubcategories ? 'object' : 'none',
+      });
+    }
 
     // Look up by title first (stable key), then by slug (may have changed)
     let parent = await Category.findOne({ title: mainData.title });

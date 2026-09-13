@@ -121,7 +121,6 @@ router.get("/status", authenticate, async (req, res) => {
         endDate,
         daysRemaining: Math.max(0, daysRemaining),
         price: plan === "company" ? PLANS.company.price : PLANS.professional.price,
-        trialDays: 30,
         isVisible,
         isRecurring: membership.type === "premium" && !membership.expiresAt,
       }
@@ -211,10 +210,6 @@ router.post("/create-preapproval", authenticate, async (req, res) => {
     const professional = await Professional.findOne({ userId: req.userId });
     const now = new Date();
     let startDate = new Date(now);
-
-    if (professional && professional.subscription?.status === "trial" && professional.subscription?.trialEnd) {
-      startDate = new Date(professional.subscription.trialEnd);
-    }
 
     const MONTHLY_PRICE = 5000;
     const externalReference = `pre_monthly_${req.userId}_${Date.now()}`;

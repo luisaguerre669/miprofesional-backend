@@ -19,8 +19,8 @@ const CategoriesPage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <Helmet>
-        <title>Todas las categorias — MiProfesional</title>
-        <meta name="description" content="Explora todas las categorias de servicios profesionales en MiProfesional." />
+        <title>Todas las categorias — MiProfesionalYa</title>
+        <meta name="description" content="Explora todas las categorias de servicios profesionales en MiProfesionalYa." />
         <link rel="canonical" href="https://www.miprofesional.online/categorias" />
       </Helmet>
 

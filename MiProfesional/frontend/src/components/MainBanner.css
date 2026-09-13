@@ -9,13 +9,11 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(rgba(0, 0, 0, .6), rgba(0, 0, 0, .6)),
-    url('https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1920&q=80');
+    linear-gradient(rgba(0, 0, 0, .45), rgba(0, 0, 0, .45)),
+    url('/images/teal_marble_bg.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  animation: bgPan 40s ease-in-out infinite alternate;
-  will-change: background-position;
 }
 
 @keyframes bgPan {
@@ -67,7 +65,7 @@
 }
 
 .main-banner-title-accent {
-  background: linear-gradient(135deg, #34d399, #10b981);
+  background: linear-gradient(135deg, #f5b92e, #e5a50d);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -103,20 +101,20 @@
 }
 
 .main-banner-btn:focus-visible {
-  outline: 3px solid #34d399;
+  outline: 3px solid #e5a50d;
   outline-offset: 3px;
 }
 
 .main-banner-btn-primary {
-  background: linear-gradient(135deg, #059669, #10b981);
+  background: linear-gradient(135deg, #1b40ae, #1f4fd8);
   color: #fff;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, .35);
+  box-shadow: 0 4px 14px rgba(31, 79, 216, .35);
 }
 
 .main-banner-btn-primary:hover,
 .main-banner-btn-primary:focus-visible {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(5, 150, 105, .45);
+  box-shadow: 0 8px 24px rgba(31, 79, 216, .45);
 }
 
 .main-banner-btn-secondary {
@@ -148,7 +146,7 @@
 }
 
 .main-banner-trust-item svg {
-  color: #34d399;
+  color: #3cc492;
   flex-shrink: 0;
 }
 
@@ -236,7 +234,7 @@
 }
 
 .gallery-nav-btn:focus-visible {
-  outline: 2px solid #34d399;
+  outline: 2px solid #e5a50d;
   outline-offset: 2px;
 }
 
@@ -254,7 +252,7 @@
 }
 
 .gallery-dot.active {
-  background: #34d399;
+  background: #e5a50d;
   width: 18px;
   border-radius: 3px;
 }
@@ -300,15 +298,15 @@
   align-items: center;
   gap: 12px;
   padding: 14px 20px;
-  background: linear-gradient(135deg, #78350f, #92400e, #b45309);
-  border: 1px solid rgba(251, 191, 36, .25);
+  background: linear-gradient(135deg, #101d3d, #1b2f6e, #1a378c);
+  border: 1px solid rgba(229, 165, 13, .35);
   border-radius: 12px;
   font-size: 14px;
   color: #fef3c7;
 }
 
 .promo-slot-content svg {
-  color: #fbbf24;
+  color: #f5b92e;
   flex-shrink: 0;
 }
 

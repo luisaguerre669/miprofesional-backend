@@ -382,7 +382,6 @@ const professionalSchema = new mongoose.Schema({
     activatedAt: { type: Date, default: null },
     cancelledAt: { type: Date, default: null },
   },
-  promoApplied: { type: Boolean, default: false },
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
@@ -455,7 +454,6 @@ professionalSchema.index({ primaryCategory: 1 });
 professionalSchema.index({ commerceType: 1 });
 professionalSchema.index({ subCategory: 1 });
 professionalSchema.index({ tags: 1 });
-professionalSchema.index({ promoApplied: 1 });
 professionalSchema.index({ isActive: 1, 'stats.rating': -1 });
 professionalSchema.index({ isActive: 1, 'stats.reviewCount': -1 });
 professionalSchema.index({ isActive: 1, 'pricing.hourlyRate': 1 });

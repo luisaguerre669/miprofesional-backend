@@ -6,11 +6,11 @@ import api from '../lib/axios';
 import DOMPurify from 'dompurify';
 import {
   UserPlus, Shield, ArrowRight, CheckCircle, AlertCircle,
-  Phone, Mail, Lock, User, Briefcase, Upload, Gift,
+  Phone, Mail, Lock, User, Briefcase, Upload,
   FileText, Building2, Sparkles, Smartphone, Info, CreditCard, MapPin, AlertTriangle, Store, Tag
 } from 'lucide-react';
-import commerceCategories from '../data/commerceCategories';
 import LocationPicker from '../components/LocationPicker';
+import { PRICES, formatARS } from '../config/plansConfig';
 
 const LICENSED_PROFESSIONS = [
   'medicos-247', 'medico-domicilio', 'medico', 'enfermeros-247', 'enfermero', 'terapeuta', 'terapeutas-247', 'psicologos-guardia', 'psicologo-247',
@@ -25,6 +25,12 @@ function validatePassword(pw) {
   if (!/[0-9]/.test(pw)) errors.push('Debe contener al menos un número');
   return errors;
 }
+
+const PAYMENT_MODEL_VERSION = 'v1';
+const TERMS_VERSION = 'v1';
+const POLICY_VERSION = 'v1';
+
+const PAYMENT_MODEL_DECLARATION = 'Declaro conocer y aceptar que MiProfesionalYa es una plataforma de conexión entre clientes y profesionales. Los pagos por los trabajos o servicios contratados se acuerdan y realizan directamente entre el cliente y el profesional, sin intervención de MiProfesionalYa.';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -50,8 +56,8 @@ const Register = () => {
     primaryCategory: '',
     commerceType: '',
     subCategory: '',
-    subCategories: [],
-    tags: ''
+    tags: '',
+    paymentModelAccepted: false
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -60,6 +66,7 @@ const Register = () => {
   const [registered, setRegistered] = useState(false);
   const [customProfession, setCustomProfession] = useState('');
   const [passwordErrors, setPasswordErrors] = useState([]);
+  const [paymentModelError, setPaymentModelError] = useState('');
 
   const [categories, setCategories] = useState([]);
   const isProfessional = formData.role === 'professional';
@@ -158,6 +165,14 @@ const Register = () => {
       return;
     }
 
+    if ((isProfessional || formData.role === 'company') && !formData.paymentModelAccepted) {
+      console.error('[FLOW] Registro cancelado: condición de pagos no aceptada');
+      setPaymentModelError('Debes aceptar la condición sobre los pagos entre las partes para completar tu registro.');
+      setError('Debes aceptar la condición sobre los pagos entre las partes para completar tu registro.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const traceId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'trace-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
       console.log('[FLOW] traceId:', traceId);
@@ -179,10 +194,13 @@ const Register = () => {
         servicioADomicilio: formData.servicioADomicilio,
         primaryCategory: findGroupForProfession(formData.profession) === 'Comercios' ? 'comercio' : 'professional',
         commerceType: formData.commerceType || undefined,
-        subCategories: formData.subCategories?.length ? formData.subCategories : undefined,
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
         address,
-        termsAccepted: formData.acceptTerms
+        termsAccepted: formData.acceptTerms,
+        termsVersion: TERMS_VERSION,
+        policyVersion: POLICY_VERSION,
+        paymentModelAccepted: (isProfessional || formData.role === 'company') ? formData.paymentModelAccepted : undefined,
+        paymentModelVersion: PAYMENT_MODEL_VERSION
       };
 
       const safeLog = { ...sanitizedData, password: '***HIDDEN***' };
@@ -191,7 +209,7 @@ const Register = () => {
       console.log('[FLOW] Invocando AuthContext.register');
       const result = await register(
         sanitizedData.name, sanitizedData.email, sanitizedData.password, sanitizedData.role,
-        { phone: sanitizedData.phone, profession: sanitizedData.profession, categories: sanitizedData.categories, available24h: sanitizedData.available24h, disponible24hs: sanitizedData.disponible24hs, disponibleFinesDeSemana: sanitizedData.disponibleFinesDeSemana, disponibleFeriados: sanitizedData.disponibleFeriados, atencionInmediata: sanitizedData.atencionInmediata, servicioADomicilio: sanitizedData.servicioADomicilio, primaryCategory: sanitizedData.primaryCategory, commerceType: sanitizedData.commerceType, subCategories: sanitizedData.subCategories, tags: sanitizedData.tags, address: sanitizedData.address, termsAccepted: sanitizedData.termsAccepted, traceId }
+        { phone: sanitizedData.phone, profession: sanitizedData.profession, categories: sanitizedData.categories, available24h: sanitizedData.available24h, disponible24hs: sanitizedData.disponible24hs, disponibleFinesDeSemana: sanitizedData.disponibleFinesDeSemana, disponibleFeriados: sanitizedData.disponibleFeriados, atencionInmediata: sanitizedData.atencionInmediata, servicioADomicilio: sanitizedData.servicioADomicilio, primaryCategory: sanitizedData.primaryCategory, commerceType: sanitizedData.commerceType, tags: sanitizedData.tags, address: sanitizedData.address, termsAccepted: sanitizedData.termsAccepted, termsVersion: sanitizedData.termsVersion, policyVersion: sanitizedData.policyVersion, paymentModelAccepted: sanitizedData.paymentModelAccepted, paymentModelVersion: sanitizedData.paymentModelVersion, traceId }
       );
       console.log('[FLOW] Step 4 - register() finalizado');
       if (result.success) {
@@ -208,10 +226,8 @@ const Register = () => {
             headers: { 'Content-Type': 'multipart/form-data' }
           }).catch(e => console.error('Error al subir licencia:', e));
         }
-        if (isProfessional) {
-          navigate('/dashboard/professional');
-        } else if (formData.role === 'company') {
-          navigate('/dashboard/company');
+        if (isProfessional || formData.role === 'company') {
+          navigate('/subscriptions');
         } else {
           navigate('/');
         }
@@ -253,15 +269,16 @@ const Register = () => {
 
   const GROUP_TO_SLUG = {
     'Construccion': 'construccion-y-hogar',
-    'Servicios Generales': 'servicios-generales',
-    '24-7': 'servicios-24-7',
+    'Servicios Generales': 'profesionales',
+    '24-7': '24-7',
     'Hogar y Confort': 'hogar-diseno',
-    'Belleza y Cuidado': 'belleza-y-cuidado',
-    'Bienestar y Deporte': 'bienestar-y-deportes',
+    'Belleza y Cuidado': 'profesionales',
+    'Bienestar y Deporte': 'profesionales',
+    'Gastronomia': 'profesionales',
     'Mascotas': 'mascotas',
     'Tecnologia': 'tecnologia',
-    'Automotor': 'automotores',
-    'Transporte y Turismo': 'transporte',
+    'Automotor': 'profesionales',
+    'Transporte y Turismo': 'profesionales',
     'Empresas': 'legales-y-administracion',
     'Comercios': 'comercio',
   };
@@ -587,58 +604,40 @@ const Register = () => {
                   </select>
                 </div>
 
-                {/* Commerce-specific fields */}
+                /* Commerce-specific fields */
                 {findGroupForProfession(formData.profession) === 'Comercios' && (
-                  <div className="space-y-4 p-4 bg-amber-50/50 border border-amber-200 rounded-xl">
+                  <div className="space-y-3 p-4 bg-amber-50/50 border border-amber-200 rounded-xl">
                     <div className="flex items-center gap-2 mb-1">
                       <Store size={16} className="text-amber-600" />
-                      <p className="text-sm font-semibold text-gray-900">Rubros de tu comercio</p>
+                      <p className="text-sm font-semibold text-gray-900">Información del Comercio</p>
                     </div>
-                    <p className="text-xs text-gray-500">Seleccioná uno o varios rubros. Tu comercio aparecerá en todas las categorías seleccionadas.</p>
-                    <div className="grid grid-cols-2 gap-1.5 max-h-60 overflow-y-auto pr-1">
-                      {commerceCategories.map(cat => {
-                        const selected = formData.subCategories?.includes(cat.slug);
-                        return (
-                          <button
-                            key={cat.slug}
-                            type="button"
-                            onClick={() => {
-                              setFormData(prev => ({
-                                ...prev,
-                                subCategories: selected
-                                  ? (prev.subCategories || []).filter(s => s !== cat.slug)
-                                  : [...(prev.subCategories || []), cat.slug]
-                              }));
-                            }}
-                            className={`flex items-center gap-2 p-2 rounded-lg text-xs font-medium border transition-all text-left ${
-                              selected
-                                ? 'border-amber-500 bg-amber-100 text-amber-800'
-                                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                            }`}
-                          >
-                            <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                              selected ? 'bg-amber-500 border-amber-500 text-white' : 'border-gray-300'
-                            }`}>
-                              {selected && (
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
-                              )}
-                            </div>
-                            {cat.title}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {formData.subCategories?.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {formData.subCategories.map(slug => {
-                          const cat = commerceCategories.find(c => c.slug === slug);
-                          return cat ? (
-                            <span key={slug} className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-200/60 text-amber-800 text-[10px] font-medium rounded-full">
-                              {cat.title}
-                              <button type="button" onClick={() => setFormData(prev => ({ ...prev, subCategories: (prev.subCategories || []).filter(s => s !== slug) }))} className="hover:text-amber-600">&times;</button>
-                            </span>
-                          ) : null;
-                        })}
+                    {/* Auto-detect commerceType from profession */}
+                    {(() => {
+                      const detectedType = formData.profession === 'comercio-minorista' ? 'minorista'
+                        : formData.profession === 'comercio-mayorista' ? 'mayorista'
+                        : formData.profession === 'comercio-mixto' ? 'mixto'
+                        : null;
+                      return detectedType ? (
+                        <input type="hidden" name="commerceType" value={detectedType} />
+                      ) : null;
+                    })()}
+                    {/* Manual commerceType for specific business types */}
+                    {!['comercio-minorista', 'comercio-mayorista', 'comercio-mixto'].includes(formData.profession) && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipo de Comercio</label>
+                        <div className="flex gap-2">
+                          {['minorista', 'mayorista', 'mixto'].map(type => (
+                            <button key={type} type="button" onClick={() => setFormData(prev => ({ ...prev, commerceType: type }))}
+                              className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-all ${
+                                formData.commerceType === type
+                                  ? 'border-amber-500 bg-amber-100 text-amber-800'
+                                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                              }`}
+                            >
+                              {type === 'minorista' ? 'Minorista' : type === 'mayorista' ? 'Mayorista' : 'Mixto'}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     )}
                     <div>
@@ -808,17 +807,6 @@ const Register = () => {
 
                 {isProfessional && (
                   <div className="space-y-3">
-                    <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 p-4 text-center">
-                      <div className="absolute inset-0 opacity-10">
-                        <div className="absolute -top-6 -right-6 w-20 h-20 bg-white rounded-full" />
-                        <div className="absolute -bottom-6 -left-6 w-16 h-16 bg-white rounded-full" />
-                      </div>
-                      <div className="relative z-10">
-                        <p className="text-white text-xs font-semibold flex items-center justify-center gap-1.5">
-                          <Gift size={12} /> 60 días gratis para los primeros 700 suscriptores.
-                        </p>
-                      </div>
-                    </div>
                     <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
                       <p className="text-xs text-amber-800">
                         <strong className="text-amber-900">{t('register.subscriptionRequired')}</strong>
@@ -827,7 +815,7 @@ const Register = () => {
                     {(() => {
                       const primaryCat = findGroupForProfession(formData.profession);
                       const isComercio = primaryCat === 'Comercios';
-                      const planPrice = isComercio ? '$10.000' : '$5.000';
+                      const planPrice = isComercio ? formatARS(PRICES.commerce) : formatARS(PRICES.professional);
                       const planLabel = isComercio ? 'Plan Comercio' : 'Plan Profesional';
                       const planDesc = isComercio ? 'Ideal para pizzerías, farmacias, panaderías y más' : 'Accedé a todas las funciones profesionales';
                       if (isComercio) {
@@ -889,6 +877,21 @@ const Register = () => {
                     {t('register.termsDescription')}
                   </span>
                 </label>
+
+                {(isProfessional || formData.role === 'company') && (
+                  <div className={`p-3 border rounded-xl space-y-2.5 ${paymentModelError && !formData.paymentModelAccepted ? 'bg-red-50 border-red-300' : 'bg-amber-50/50 border-amber-200'}`}>
+                    <p className="text-xs text-gray-700 leading-relaxed">{PAYMENT_MODEL_DECLARATION}</p>
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input type="checkbox" checked={formData.paymentModelAccepted}
+                        onChange={() => { setFormData(prev => ({ ...prev, paymentModelAccepted: !prev.paymentModelAccepted })); setPaymentModelError(''); }}
+                        className="mt-0.5 w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500" />
+                      <span className="text-sm font-medium text-gray-800">Acepto y comprendo esta condición.</span>
+                    </label>
+                    {paymentModelError && !formData.paymentModelAccepted && (
+                      <p className="text-xs text-red-700">{paymentModelError}</p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -904,7 +907,7 @@ const Register = () => {
                   className="flex-1 py-2.5 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-all text-sm"
                 >{t('register.continue')}</button>
               ) : (
-                <button type="submit" disabled={loading || !formData.acceptTerms}
+                <button type="submit" disabled={loading || !formData.acceptTerms || ((isProfessional || formData.role === 'company') && !formData.paymentModelAccepted)}
                   className="flex-1 py-2.5 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm"
                 >{loading ? t('register.creating') : t('register.createAccount')}</button>
               )}

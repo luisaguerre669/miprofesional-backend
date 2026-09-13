@@ -769,8 +769,6 @@ router.post('/', authenticate, async (req, res) => {
       return res.status(409).json({ success: false, message: 'Ya tienes un perfil profesional' });
     }
 
-    const now = new Date();
-    const trialEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     const professional = new Professional({
       userId: req.userId,
       categoryId: req.body.categoryId || null,
@@ -800,11 +798,6 @@ router.post('/', authenticate, async (req, res) => {
       },
       isActive: true,
       profileStatus: 'ACTIVE',
-      subscription: {
-        status: 'trial',
-        trialStart: now,
-        trialEnd: trialEnd,
-      },
     });
 
     await professional.save();
