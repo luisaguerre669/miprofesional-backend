@@ -377,13 +377,26 @@ router.get('/search', [
   query('maxDistance').optional().isFloat({ min: 1, max: 500 }).withMessage('Max distance must be between 1 and 500 km'),
   query('minRating').optional().isFloat({ min: 0, max: 5 }).withMessage('Min rating must be between 0 and 5'),
   query('maxPrice').optional().isFloat({ min: 0 }).withMessage('Max price must be a positive number'),
+  query('subcategory').optional().trim().isLength({ min: 1, max: 100 }).withMessage('Invalid subcategory'),
+  query('featured').optional().isBoolean().withMessage('featured must be a boolean'),
+  query('disponibilidad').optional().isIn(['24-7', '247']).withMessage('Invalid disponibilidad value'),
+  query('disponible24hs').optional().isBoolean().withMessage('disponible24hs must be a boolean'),
+  query('atencionInmediata').optional().isBoolean().withMessage('atencionInmediata must be a boolean'),
+  query('servicioADomicilio').optional().isBoolean().withMessage('servicioADomicilio must be a boolean'),
+  query('disponibleFinesDeSemana').optional().isBoolean().withMessage('disponibleFinesDeSemana must be a boolean'),
+  query('disponibleFeriados').optional().isBoolean().withMessage('disponibleFeriados must be a boolean'),
+  query('sortBy').optional().isIn(['rating', 'price', 'reviewCount', 'responseTime', 'createdAt', 'ranking']).withMessage('Invalid sort field'),
+  query('sort').optional().isIn(['rating', 'price', 'reviewCount', 'responseTime', 'createdAt', 'ranking']).withMessage('Invalid sort field'),
+  query('sortOrder').optional().isIn(['asc', 'desc']).withMessage('Sort order must be asc or desc'),
   query('isVerified').optional().isBoolean().withMessage('isVerified must be a boolean'),
   query('limit').optional().isInt({ min: 1, max: 50 }).withMessage('Limit must be between 1 and 50'),
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer')
 ], handleValidationErrors, async (req, res) => {
   try {
-    const { q: qQuery, search: searchQueryParam, categoryIds, primaryCategory, commerceType, subCategory, subCategories, tags, modality, modalities, location, maxDistance = 50, minRating = 0, maxPrice, isVerified = false, limit = 20, page = 1 } = req.query;
+    const { q: qQuery, search: searchQueryParam, categoryIds, primaryCategory, commerceType, subCategory, subCategories, subcategory, tags, modality, modalities, location, maxDistance = 50, minRating = 0, maxPrice, isVerified = false, featured, disponibilidad, disponible24hs, atencionInmediata, servicioADomicilio, disponibleFinesDeSemana, disponibleFeriados, sortBy: sortByParam, sort: sortAlias, sortOrder = 'desc', limit = 20, page = 1 } = req.query;
     const query = qQuery || searchQueryParam;
+
+    const sortBy = sortByParam || sortAlias || 'rating';
 
     const options = {
       categoryIds: categoryIds ? (typeof categoryIds === 'string' ? JSON.parse(categoryIds) : categoryIds) : undefined,
@@ -391,6 +404,7 @@ router.get('/search', [
       commerceType,
       subCategory,
       subCategories,
+      subcategory,
       tags,
       modality,
       modalities: modalities ? (typeof modalities === 'string' ? JSON.parse(modalities) : modalities) : undefined,
@@ -399,10 +413,17 @@ router.get('/search', [
       minRating: parseFloat(minRating),
       maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
       isVerified: isVerified === 'true',
+      featured: featured === 'true',
+      disponibilidad,
+      disponible24hs: disponible24hs === 'true',
+      atencionInmediata: atencionInmediata === 'true',
+      servicioADomicilio: servicioADomicilio === 'true',
+      disponibleFinesDeSemana: disponibleFinesDeSemana === 'true',
+      disponibleFeriados: disponibleFeriados === 'true',
+      sortBy,
+      sortOrder: sortOrder === 'asc' ? 'asc' : 'desc',
       limit: parseInt(limit),
-      page: parseInt(page),
-      sortBy: 'stats.rating',
-      sortOrder: 'desc'
+      page: parseInt(page)
     };
 
     const professionals = await Professional.search(query, options);

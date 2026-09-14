@@ -257,14 +257,38 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
   body('address.state').optional().trim(),
   body('categoryId').optional().isMongoId().withMessage('Invalid category ID'),
   body('subcategoryId').optional().isMongoId().withMessage('Invalid subcategory ID'),
+  body('categories').optional().isArray({ max: 10 }).withMessage('categories must be an array').custom((value) => {
+    return (value || []).every(item => item && (item.categoryId || item.category));
+  }).withMessage('Each category must have a categoryId'),
+  body('categories.*.categoryId').optional().isMongoId(),
+  body('categories.*.subcategoryId').optional().isMongoId(),
   body('available24h').optional().isBoolean().withMessage('available24h must be a boolean'),
+  body('atencionInmediata').optional().isBoolean().withMessage('atencionInmediata must be a boolean'),
+  body('servicioADomicilio').optional().isBoolean().withMessage('servicioADomicilio must be a boolean'),
+  body('disponible24hs').optional().isBoolean().withMessage('disponible24hs must be a boolean'),
+  body('disponibleFinesDeSemana').optional().isBoolean().withMessage('disponibleFinesDeSemana must be a boolean'),
+  body('disponibleFeriados').optional().isBoolean().withMessage('disponibleFeriados must be a boolean'),
+  body('licenseNumber').optional().trim().isLength({ max: 100 }).withMessage('licenseNumber too long'),
   body('paymentModelAccepted').optional().isBoolean().withMessage('paymentModelAccepted must be a boolean'),
   body('paymentModelVersion').optional().isString().withMessage('paymentModelVersion must be a string'),
   body('termsVersion').optional().isString().withMessage('termsVersion must be a string'),
   body('policyVersion').optional().isString().withMessage('policyVersion must be a string')
 ], handleValidationErrors, async (req, res) => {
   try {
-    const { name, email, password, phone, location, address, role = 'client', profession, categoryId, subcategoryId, available24h, acceptMarketing, primaryCategory, commerceType, subCategories, tags, paymentModelAccepted, paymentModelVersion, termsVersion, policyVersion } = req.body;
+    const { name, email, password, phone, location, address, role = 'client', profession, categoryId, subcategoryId, categories, available24h, atencionInmediata, servicioADomicilio, disponible24hs, disponibleFinesDeSemana, disponibleFeriados, licenseNumber, acceptMarketing, primaryCategory, commerceType, subCategories, tags, paymentModelAccepted, paymentModelVersion, termsVersion, policyVersion } = req.body;
+
+    const registerAvailability = {
+      available24h: available24h === true,
+      atencionInmediata: atencionInmediata === true,
+      servicioADomicilio: servicioADomicilio === true,
+      disponible24hs: disponible24hs === true,
+      disponibleFinesDeSemana: disponibleFinesDeSemana === true,
+      disponibleFeriados: disponibleFeriados === true
+    };
+
+    const registerCategories = Array.isArray(categories) && categories.length
+      ? categories.map(c => ({ categoryId: c.categoryId || c.category, subcategoryId: c.subcategoryId || null }))
+      : (categoryId ? [{ categoryId, subcategoryId: subcategoryId || null }] : []);
 
     if (role !== 'client' && paymentModelAccepted !== true) {
       return res.status(400).json({
@@ -321,38 +345,44 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
           existingPro.profileStatus = 'ACTIVE';
           if (categoryId) existingPro.categoryId = categoryId;
           if (subcategoryId) existingPro.subcategoryId = subcategoryId;
-          if (categoryId && (!existingPro.categories || existingPro.categories.length === 0)) {
+          if (registerCategories.length) {
+            existingPro.categories = registerCategories;
+          } else if (categoryId && (!existingPro.categories || existingPro.categories.length === 0)) {
             existingPro.categories = [{ categoryId, subcategoryId: subcategoryId || null }];
           }
-          if (available24h !== undefined) existingPro.available24h = available24h;
+          Object.assign(existingPro, registerAvailability);
+          if (licenseNumber !== undefined) existingPro.licenseNumber = licenseNumber || null;
           if (primaryCategory) existingPro.primaryCategory = primaryCategory;
           if (commerceType) existingPro.commerceType = commerceType;
           if (subCategories) existingPro.subCategories = subCategories;
           if (tags) existingPro.tags = tags;
           await existingPro.save();
         } else {
+          const eCoordsReal = (c) => c && Array.isArray(c && c.coordinates) && c.coordinates.length === 2 && (c.coordinates[0] !== 0 || c.coordinates[1] !== 0);
+          const eInherited = eCoordsReal(existingUser.coordinates) ? existingUser.coordinates : null;
           const proLocation = address?.street || address?.city ? {
             address: `${address.street || ''} ${address.number || ''}`.trim(),
             city: address.city || 'pendiente',
             state: address.state || 'pendiente',
             country: address.country || 'Argentina',
-            coordinates: address.coordinates || { type: 'Point', coordinates: [0, 0] }
+            coordinates: eCoordsReal(address?.coordinates) ? address.coordinates : (eInherited || { type: 'Point', coordinates: [0, 0] })
           } : {
             address: 'pendiente',
             city: 'pendiente',
             state: 'pendiente',
             country: 'Argentina',
-            coordinates: { type: 'Point', coordinates: [0, 0] }
+            coordinates: eInherited || { type: 'Point', coordinates: [0, 0] }
           };
-          const categoriesData = categoryId ? [{ categoryId, subcategoryId: subcategoryId || null }] : [];
+          const categoriesData = registerCategories.length ? registerCategories : (categoryId ? [{ categoryId, subcategoryId: subcategoryId || null }] : []);
           await new Professional({
             userId: existingUser._id,
             businessName: name,
             profession: profession || 'pendiente',
-            categoryId: categoryId || undefined,
-            subcategoryId: subcategoryId || undefined,
+            categoryId: categoryId || (categoriesData[0] && categoriesData[0].categoryId) || undefined,
+            subcategoryId: subcategoryId || (categoriesData[0] && categoriesData[0].subcategoryId) || undefined,
             categories: categoriesData,
-            available24h: available24h === true,
+            ...registerAvailability,
+            licenseNumber: licenseNumber || null,
             primaryCategory: primaryCategory || undefined,
             commerceType: commerceType || undefined,
             subCategories: subCategories || undefined,
@@ -431,38 +461,41 @@ router.post('/register', registerLimiter, validateRegistrationSecurity, [
     // Create professional record if role is professional
     if (role === 'professional') {
       try {
+        const coordsReal = (c) => c && Array.isArray(c && c.coordinates) && c.coordinates.length === 2 && (c.coordinates[0] !== 0 || c.coordinates[1] !== 0);
+        const inheritedCoords = coordsReal(user.coordinates) ? user.coordinates : null;
         const proLocation = address?.street || address?.city ? {
           address: `${address.street || ''} ${address.number || ''}`.trim(),
           city: address.city || 'pendiente',
           state: address.state || 'pendiente',
           country: address.country || 'Argentina',
-          coordinates: address.coordinates || { type: 'Point', coordinates: [0, 0] }
+          coordinates: coordsReal(address?.coordinates) ? address.coordinates : (inheritedCoords || { type: 'Point', coordinates: [0, 0] })
         } : {
           address: 'pendiente',
           city: 'pendiente',
           state: 'pendiente',
           country: 'Argentina',
-          coordinates: { type: 'Point', coordinates: [0, 0] }
+          coordinates: inheritedCoords || { type: 'Point', coordinates: [0, 0] }
         };
-        const categoriesData = categoryId ? [{ categoryId, subcategoryId: subcategoryId || null }] : [];
+        const categoriesData = registerCategories.length ? registerCategories : (categoryId ? [{ categoryId, subcategoryId: subcategoryId || null }] : []);
         const professional = new Professional({
           userId: user._id,
           businessName: name,
           profession: profession || 'pendiente',
-          categoryId: categoryId || undefined,
-          subcategoryId: subcategoryId || undefined,
+          categoryId: categoryId || (categoriesData[0] && categoriesData[0].categoryId) || undefined,
+          subcategoryId: subcategoryId || (categoriesData[0] && categoriesData[0].subcategoryId) || undefined,
           categories: categoriesData,
           primaryCategory: primaryCategory || undefined,
           commerceType: commerceType || undefined,
           subCategories: subCategories || undefined,
           tags: tags || undefined,
+          licenseNumber: licenseNumber || null,
           description: 'Completa tu perfil profesional',
           contact: { phone: phone || '+000000000000', email: user.email },
           location: proLocation,
           pricing: { hourlyRate: 0, currency: 'ARS' },
           isActive: true,
           profileStatus: 'ACTIVE',
-          available24h: available24h === true,
+          ...registerAvailability,
         });
         await professional.save();
       } catch (proErr) {

@@ -361,6 +361,26 @@ const professionalSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  atencionInmediata: {
+    type: Boolean,
+    default: false
+  },
+  servicioADomicilio: {
+    type: Boolean,
+    default: false
+  },
+  disponible24hs: {
+    type: Boolean,
+    default: false
+  },
+  disponibleFinesDeSemana: {
+    type: Boolean,
+    default: false
+  },
+  disponibleFeriados: {
+    type: Boolean,
+    default: false
+  },
   lastActiveAt: {
     type: Date,
     default: null
@@ -644,6 +664,7 @@ professionalSchema.statics.search = function(query, options = {}) {
     commerceType,
     subCategory,
     subCategories,
+    subcategory,
     tags,
     modality,
     modalities,
@@ -653,6 +674,13 @@ professionalSchema.statics.search = function(query, options = {}) {
     maxPrice,
     isVerified = false,
     available24h = false,
+    disponibilidad,
+    atencionInmediata = false,
+    servicioADomicilio = false,
+    disponible24hs = false,
+    disponibleFinesDeSemana = false,
+    disponibleFeriados = false,
+    featured = false,
     limit = 20,
     skip: providedSkip,
     page = 1,
@@ -704,10 +732,33 @@ professionalSchema.statics.search = function(query, options = {}) {
 
   // Single commerce subCategory filter (matches both subCategories[] and legacy subCategory)
   if (subCategory) {
-    searchQuery.$or = [
+    const catFilter = { $or: [
       { subCategories: subCategory },
       { subCategory: subCategory },
-    ];
+    ] };
+    if (searchQuery.$or) {
+      searchQuery.$and = searchQuery.$and || [];
+      searchQuery.$and.push(catFilter);
+    } else {
+      searchQuery.$or = catFilter.$or;
+    }
+  }
+
+  // Single subcategory filter — accepts both the slug (subCategories[]) and the Mongo _id (categories[].subcategoryId)
+  if (subcategory) {
+    const scFilter = { $or: [
+      { subCategories: subcategory },
+      { 'categories.subcategoryId': subcategory },
+    ] };
+    if (searchQuery.$or) {
+      searchQuery.$and = [
+        { $or: searchQuery.$or },
+        scFilter
+      ];
+      delete searchQuery.$or;
+    } else {
+      searchQuery.$or = scFilter.$or;
+    }
   }
 
   // Tags filter
@@ -753,13 +804,44 @@ professionalSchema.statics.search = function(query, options = {}) {
     searchQuery['verification.isVerified'] = true;
   }
   
-  // Available 24-7 filter
-  if (available24h) {
-    searchQuery.available24h = true;
+  // Available 24-7 filter (alias: available24h or disponible24hs / disponibilidad=24-7)
+  const quiere247 = disponible24hs || (disponibilidad && (disponibilidad === '24-7' || disponibilidad === '247'));
+  if (available24h || quiere247) {
+    const f247 = { $or: [{ available24h: true }, { disponible24hs: true }] };
+    if (searchQuery.$or) {
+      searchQuery.$and = searchQuery.$and || [];
+      searchQuery.$and.push(f247);
+    } else {
+      searchQuery.$or = f247.$or;
+    }
   }
-  
+
+  // Single availability flags
+  const availabilityFlags = { atencionInmediata, servicioADomicilio, disponibleFinesDeSemana, disponibleFeriados };
+  for (const [flag, value] of Object.entries(availabilityFlags)) {
+    if (value) {
+      searchQuery[flag] = true;
+    }
+  }
+
+  // Featured filter
+  if (featured) {
+    searchQuery.isFeatured = true;
+    searchQuery.featuredUntil = { $or: [null, { $gt: new Date() }] };
+  }
+
+  const SORTS = {
+    rating: 'stats.rating',
+    price: 'pricing.hourlyRate',
+    reviewCount: 'stats.reviewCount',
+    responseTime: 'stats.responseTime',
+    createdAt: 'createdAt',
+    ranking: 'stats.rating'
+  };
+  const sortField = SORTS[sortBy] || sortBy;
+
   return this.find(searchQuery)
-    .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 })
+    .sort({ [sortField]: sortOrder === 'asc' ? 1 : -1 })
     .skip(skip)
     .limit(limit)
     .populate('categories.categoryId', 'title')

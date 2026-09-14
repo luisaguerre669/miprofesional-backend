@@ -104,15 +104,89 @@ router.patch("/users/:id/status", async (req, res) => {
 });
 
 router.patch("/users/:id/role", [
-  body("role").isIn(["client", "professional", "admin"])
+  body("role").isIn(["client", "professional", "company", "employer", "admin"])
 ], handleValidationErrors, async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, { role: req.body.role }, { new: true }).select('-password');
+    const newRole = req.body.role;
+    const user = await User.findByIdAndUpdate(req.params.id, { role: newRole }, { new: true }).select('-password');
     if (!user) return res.status(404).json({ success: false, message: "Usuario no encontrado" });
+
+    // Keep Professional records in sync with the user role (bug fix: admin role changes never created/matched the Professional doc)
+    if (newRole === 'professional' || newRole === 'company' || newRole === 'employer') {
+      const existingPro = await Professional.findOne({ userId: user._id });
+      if (existingPro) {
+        existingPro.isActive = true;
+        existingPro.profileStatus = 'ACTIVE';
+        await existingPro.save();
+      } else {
+        await new Professional({
+          userId: user._id,
+          businessName: user.name || 'pendiente',
+          profession: 'pendiente',
+          description: 'Completa tu perfil profesional',
+          contact: { phone: user.phone || '+000000000000', email: user.email },
+          location: {
+            address: user.address && (user.address.street || user.address.city) ? `${user.address.street || ''} ${user.address.number || ''}`.trim() : 'pendiente',
+            city: user.address && user.address.city ? user.address.city : 'pendiente',
+            state: user.address && user.address.state ? user.address.state : 'pendiente',
+            country: (user.address && user.address.country) || 'Argentina',
+            coordinates: user.coordinates || { type: 'Point', coordinates: [0, 0] }
+          },
+          pricing: { hourlyRate: 0, currency: 'ARS' },
+          isActive: true,
+          profileStatus: 'ACTIVE'
+        }).save();
+      }
+    } else if (newRole === 'client' || newRole === 'admin') {
+      await Professional.updateMany({ userId: user._id }, { isActive: false });
+    }
+
     res.json({ success: true, message: "Rol actualizado", data: user });
   } catch (error) {
     logger.error("Admin update role error:", error);
     res.status(500).json({ success: false, message: "Error al actualizar rol" });
+  }
+});
+
+// POST /api/v1/admin/sync-professionals - Backfill: create a Professional doc for every professional/company user that is missing one
+router.post("/sync-professionals", async (req, res) => {
+  try {
+    const users = await User.find({ role: { $in: ['professional', 'company', 'employer'] } }).select('name email phone address coordinates');
+    let created = 0;
+    const skipped = [];
+    for (const usr of users) {
+      const exists = await Professional.findOne({ userId: usr._id });
+      if (exists) {
+        skipped.push(usr._id);
+        continue;
+      }
+      await new Professional({
+        userId: usr._id,
+        businessName: usr.name || 'pendiente',
+        profession: 'pendiente',
+        description: 'Completa tu perfil profesional',
+        contact: { phone: usr.phone || '+000000000000', email: usr.email },
+        location: {
+          address: usr.address && (usr.address.street || usr.address.city) ? `${usr.address.street || ''} ${usr.address.number || ''}`.trim() : 'pendiente',
+          city: usr.address && usr.address.city ? usr.address.city : 'pendiente',
+          state: usr.address && usr.address.state ? usr.address.state : 'pendiente',
+          country: (usr.address && usr.address.country) || 'Argentina',
+          coordinates: usr.coordinates || { type: 'Point', coordinates: [0, 0] }
+        },
+        pricing: { hourlyRate: 0, currency: 'ARS' },
+        isActive: true,
+        profileStatus: 'ACTIVE'
+      }).save();
+      created += 1;
+    }
+    res.json({
+      success: true,
+      message: "Sincronizacion completada",
+      data: { relevantUsers: users.length, created, alreadySynced: skipped.length }
+    });
+  } catch (error) {
+    logger.error("Admin sync-professionals error:", error);
+    res.status(500).json({ success: false, message: "Error al sincronizar profesionales" });
   }
 });
 
@@ -184,6 +258,91 @@ router.delete("/professionals/:id", async (req, res) => {
   } catch (error) {
     logger.error("Admin delete professional error:", error);
     res.status(500).json({ success: false, message: "Error al eliminar profesional" });
+  }
+});
+
+// ── Company Management (adapted from the mirrored codebase: root User has no `subscription` field,
+//    so subscription state is read from the linked Professional doc) ──────────────────────────
+
+const COMPANY_ROLES = ['company', 'employer'];
+
+router.get("/companies", async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search, subscriptionStatus } = req.query;
+    const query = { role: { $in: COMPANY_ROLES } };
+    if (search) query.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: 'i' } }
+    ];
+    if (subscriptionStatus && subscriptionStatus !== 'all') {
+      const proUserIds = await Professional.find({ 'subscription.status': subscriptionStatus }).distinct('userId');
+      query._id = { $in: proUserIds };
+    }
+
+    const companies = await User.find(query)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit))
+      .select('name email phone role isActive createdAt membership');
+
+    const total = await User.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: companies,
+      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
+    });
+  } catch (error) {
+    logger.error("Admin companies error:", error);
+    res.status(500).json({ success: false, message: "Error al obtener empresas" });
+  }
+});
+
+router.get("/companies/stats", async (req, res) => {
+  try {
+    const companyIds = await User.find({ role: { $in: COMPANY_ROLES } }).distinct('_id');
+    const [activeSubscriptions, suspendedCompanies, planBreakdown] = await Promise.all([
+      Professional.countDocuments({ userId: { $in: companyIds }, 'subscription.status': 'active' }),
+      Professional.countDocuments({ userId: { $in: companyIds }, 'subscription.status': 'suspended' }),
+      Professional.aggregate([
+        { $match: { userId: { $in: companyIds }, 'subscription.plan': { $ne: null } } },
+        { $group: { _id: '$subscription.plan', count: { $sum: 1 } } }
+      ])
+    ]);
+
+    res.json({
+      success: true,
+      data: { totalCompanies: companyIds.length, activeSubscriptions, suspendedCompanies, planBreakdown }
+    });
+  } catch (error) {
+    logger.error("Admin companies stats error:", error);
+    res.status(500).json({ success: false, message: "Error al obtener estadisticas de empresas" });
+  }
+});
+
+router.get("/payments/companies", async (req, res) => {
+  try {
+    const { page = 1, limit = 20, status } = req.query;
+    const companyIds = await User.find({ role: { $in: COMPANY_ROLES } }).distinct('_id');
+    const query = { userId: { $in: companyIds } };
+    if (status) query.status = status;
+
+    const payments = await Payment.find(query)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit))
+      .populate('userId', 'name email');
+
+    const total = await Payment.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: payments,
+      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
+    });
+  } catch (error) {
+    logger.error("Admin company payments error:", error);
+    res.status(500).json({ success: false, message: "Error al obtener pagos de empresas" });
   }
 });
 
