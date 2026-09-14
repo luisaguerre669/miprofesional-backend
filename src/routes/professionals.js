@@ -389,7 +389,7 @@ router.get('/search', [
   query('sort').optional().isIn(['rating', 'price', 'reviewCount', 'responseTime', 'createdAt', 'ranking']).withMessage('Invalid sort field'),
   query('sortOrder').optional().isIn(['asc', 'desc']).withMessage('Sort order must be asc or desc'),
   query('isVerified').optional().isBoolean().withMessage('isVerified must be a boolean'),
-  query('limit').optional().isInt({ min: 1, max: 50 }).withMessage('Limit must be between 1 and 50'),
+  query('limit').optional().isInt({ min: 0, max: 1000 }).withMessage('Limit must be between 0 and 1000'),
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer')
 ], handleValidationErrors, async (req, res) => {
   try {

@@ -843,7 +843,7 @@ professionalSchema.statics.search = function(query, options = {}) {
   return this.find(searchQuery)
     .sort({ [sortField]: sortOrder === 'asc' ? 1 : -1 })
     .skip(skip)
-    .limit(limit)
+    .limit(limit > 0 ? limit : 1000)
     .populate('categories.categoryId', 'title')
     .populate('userId', 'name email phone');
 };
